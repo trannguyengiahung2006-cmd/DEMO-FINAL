@@ -1,0 +1,4706 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Gym Coach — Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800;900&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
+      #root {
+        overflow: hidden;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #f0f2f5;
+        font-family: "DM Sans", sans-serif;
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 2px;
+      }
+      input,
+      textarea,
+      select {
+        font-family: "DM Sans", sans-serif;
+        outline: none;
+      }
+      button {
+        font-family: "DM Sans", sans-serif;
+        cursor: pointer;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      /* ════════════════════════════════════════
+         DESKTOP LAYOUT (≥ 768px)
+         ════════════════════════════════════════ */
+      @media (min-width: 768px) {
+        html,
+        body,
+        #root {
+          height: 100%;
+          overflow: hidden;
+        }
+        #root {
+          display: flex;
+          flex-direction: row;
+        }
+
+        /* ── Pre-app screens: Disclaimer & Onboarding ── */
+        .screen-fullpage {
+          flex: 1;
+          display: flex;
+          flex-direction: row;
+          min-height: 100vh;
+          overflow-y: auto;
+        }
+        .screen-left {
+          display: flex !important;
+          width: 42%;
+          min-height: 100vh;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 60px 48px;
+          background: linear-gradient(
+            160deg,
+            #eef2ff 0%,
+            #f8fafc 60%,
+            #e2e8f0 100%
+          );
+          position: sticky;
+          top: 0;
+          height: 100vh;
+        }
+        .screen-right {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          padding: 48px 40px;
+          overflow-y: auto;
+          min-height: 100vh;
+        }
+        .screen-right > div {
+          width: 100%;
+          max-width: 460px;
+        }
+
+        /* ── Main app shell ── */
+        .app-root {
+          flex: 1;
+          display: flex;
+          flex-direction: row;
+          height: 100vh;
+          overflow: hidden;
+        }
+        .app-sidebar {
+          display: flex !important;
+          width: 240px;
+          flex-shrink: 0;
+          height: 100vh;
+          background: #ffffff;
+          flex-direction: column;
+          padding: 28px 16px;
+          overflow-y: auto;
+        }
+        .app-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          overflow: hidden;
+          background: #f0f2f5;
+        }
+        .app-topbar {
+          display: flex !important;
+          background: #fff;
+          border-bottom: 1px solid #e5e7eb;
+          padding: 0 32px;
+          height: 60px;
+          align-items: center;
+          justify-content: space-between;
+          flex-shrink: 0;
+        }
+        .mobile-nav {
+          display: none !important;
+        }
+        .mobile-header {
+          display: none !important;
+        }
+        .app-shell-inner {
+          flex: 1;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+        }
+      }
+
+      /* ── Mobile defaults ── */
+      @media (max-width: 767px) {
+        .screen-left {
+          display: none !important;
+        }
+        .screen-fullpage {
+          display: block;
+          min-height: 100vh;
+        }
+        .screen-right {
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+        .screen-right > div {
+          width: 100%;
+          max-width: 420px;
+        }
+        .app-sidebar {
+          display: none !important;
+        }
+        .app-topbar {
+          display: none !important;
+        }
+        .app-root {
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+        }
+        .app-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .app-shell-inner {
+          flex: 1;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- DEMO PANEL — chỉ hiện khi có ?demo=1 trong URL -->
+    <div
+      id="demo-panel"
+      style="
+        display: none;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 9999;
+        background: #ffffff;
+        border: 1.5px solid #2563eb;
+        border-radius: 14px;
+        padding: 14px 16px;
+        min-width: 200px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        font-family: &quot;DM Sans&quot;, sans-serif;
+      "
+    >
+      <div
+        style="
+          font-size: 11px;
+          color: #2563eb;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          margin-bottom: 10px;
+        "
+      >
+        ⚡ DEMO MODE
+      </div>
+      <div style="font-size: 11px; color: #6b7280; margin-bottom: 8px">
+        Chọn kịch bản demo:
+      </div>
+      <div id="demo-buttons"></div>
+      <div
+        style="
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid #d1d5db;
+        "
+      >
+        <div style="font-size: 10px; color: #6b7280">Câu hỏi demo gợi ý:</div>
+        <div
+          style="
+            font-size: 11px;
+            color: #111827;
+            margin-top: 4px;
+            line-height: 1.5;
+          "
+        >
+          💬 "Bài tập nào phù hợp nhất?"<br />
+          📅 Tạo lịch tập ngay<br />
+          ❤️ Check-in: năng lượng 4/5
+        </div>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script>
+      // Kích hoạt demo panel khi URL có ?demo=1
+      if (new URLSearchParams(location.search).get("demo") === "1") {
+        document.getElementById("demo-panel").style.display = "block";
+      }
+    </script>
+    <script type="text/babel">
+      const { useState, useRef, useEffect } = React;
+
+      // ================================================================
+      //  👇 DÁN GEMINI API KEY VÀO ĐÂY
+      //  Lấy miễn phí tại: https://aistudio.google.com
+      // ================================================================
+      const GEMINI_KEY = "";
+      // ================================================================
+
+      // === ĐOẠN CODE TỔNG HỢP DUY NHẤT (Dán vào dòng 304) ===
+
+      const C = {
+        bg: "#F8FAFC",
+        surface: "#FFFFFF",
+        card: "#F8FAFC",
+        accent: "#2563EB",
+        accentGlow: "rgba(37,99,235,0.15)",
+        text: "#111827",
+        textSub: "#4B5563",
+        muted: "#6B7280",
+        border: "#D1D5DB",
+        warn: "#D97706",
+        warnBg: "rgba(217,119,6,0.16)",
+        cardShadow: "0 8px 24px rgba(15,23,42,0.08)",
+      };
+
+      const label = {
+        color: C.accent,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        marginBottom: 8,
+        display: "block",
+      };
+
+      const inputStyle = {
+        display: "block",
+        width: "100%",
+        background: "#FFFFFF",
+        border: `1px solid ${C.border}`, // Lưu ý: Dùng dấu huyền ` (phím dưới Esc)
+        borderRadius: 12,
+        padding: "12px 16px",
+        color: "#111827",
+        fontSize: 14,
+        transition: "all 0.2s ease",
+      };
+
+      const STORAGE_KEYS = {
+        PROFILE: "ai_gym_coach_profile",
+        CHAT: "ai_gym_coach_chat",
+        PLAN: "ai_gym_coach_plan",
+        SCREEN: "ai_gym_coach_screen",
+      };
+
+      const DISCLAIMER_VERSION = "1.0.0";
+      const APP_INFO = {
+        name: "AI Gym Coach",
+        developer: "Nhóm 5 — Khoa CNTT, ĐH Nông Lâm TP.HCM",
+        purpose:
+          "Ứng dụng nghiên cứu khoa học — KHÔNG phải sản phẩm y tế thương mại",
+        dataPolicy:
+          "Dữ liệu chỉ lưu trên thiết bị của bạn (localStorage), không gửi lên server",
+      };
+
+      // ── API ĐÃ ĐƯỢC TỐI ƯU LỖI ─────────────────────────────────────────
+      async function askAI(messages, system = "") {
+        const activeKey = localStorage.getItem("gemini_api_key") || GEMINI_KEY;
+        if (
+          !activeKey ||
+          activeKey.trim() === "" ||
+          activeKey === "PASTE_GEMINI_KEY_HERE"
+        )
+          return "⚠️ Chưa cấu hình Gemini API Key! Vui lòng nhấn vào ⚙️ Cấu hình API Key ở menu bên trái (hoặc biểu tượng 🔑 ở đầu trang trên điện thoại) để nhập key của bạn (miễn phí).";
+
+        // 1. Xử lý lịch sử Chat: BẮT BUỘC tin nhắn đầu tiên gửi đi phải từ 'user'
+        // Cắt bỏ các lời chào mặc định của AI (role: assistant) ở đầu mảng
+        let validMsgs = [...messages];
+        while (validMsgs.length > 0 && validMsgs[0].role !== "user") {
+          validMsgs.shift();
+        }
+
+        const contents = validMsgs.map((m) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
+        }));
+
+        const requestBody = { contents };
+
+        // 2. Từ khóa chuẩn của REST API là systemInstruction (chữ I viết hoa)
+        if (system) {
+          requestBody.systemInstruction = {
+            parts: [{ text: system }],
+          };
+        }
+
+        try {
+          // Sử dụng bản gemini-1.5-flash ổn định nhất cho v1beta
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(requestBody),
+            },
+          );
+
+          // 3. Bắt lỗi HTTP rành mạch để không bị văng xuống catch
+          if (!res.ok) {
+            const errorText = await res.text();
+            try {
+              const errorData = JSON.parse(errorText);
+              return `⚠️ Lỗi API (${res.status}): ${errorData.error?.message || "Lỗi không xác định"}`;
+            } catch {
+              return `⚠️ Lỗi Server (${res.status}): Định dạng phản hồi không hợp lệ.`;
+            }
+          }
+
+          const data = await res.json();
+          return (
+            data.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "Không có phản hồi từ AI."
+          );
+        } catch (error) {
+          return `❌ Không thể kết nối: ${error.message}. Vui lòng kiểm tra lại mạng.`;
+        }
+      }
+      // ── BUILD SYSTEM PROMPT DỰA TRÊN HEALTH PROFILE ──────────────
+      function buildSystemPrompt(profile) {
+        const conditions = profile.conditions?.length
+          ? profile.conditions.join(", ")
+          : "Không có";
+        const injuries = profile.injuries?.length
+          ? profile.injuries.join(", ")
+          : "Không có";
+        const bmi =
+          profile.weight && profile.height
+            ? Number(profile.weight / (profile.height / 100) ** 2).toFixed(1)
+            : null;
+        const bmiClass = bmi
+          ? bmi < 18.5
+            ? "Thiếu cân"
+            : bmi < 22.9
+              ? "Bình thường"
+              : bmi < 24.9
+                ? "Thừa cân"
+                : "Béo phì"
+          : null;
+        const age = Number(profile.age || 0);
+        const weight = Number(profile.weight || 0);
+        const height = Number(profile.height || 0);
+        const gender = (profile.gender || "").toString().toLowerCase();
+        const isMale = gender === "nam";
+        const daysNum = Number(profile.days);
+        const activityFactor =
+          daysNum <= 3
+            ? 1.375
+            : daysNum === 4
+              ? 1.55
+              : daysNum <= 6
+                ? 1.725
+                : daysNum === 7
+                  ? 1.9
+                  : 1.375;
+        const bmr =
+          weight && height && age
+            ? Math.round(
+                10 * weight + 6.25 * height - 5 * age + (isMale ? 5 : -161),
+              )
+            : null;
+        const tdee = bmr ? Math.round(bmr * activityFactor) : null;
+        const goal = (profile.goal || "").toLowerCase();
+        const calTarget = tdee
+          ? Math.round(
+              tdee +
+                (goal.includes("giảm")
+                  ? -400
+                  : goal.includes("tăng")
+                    ? 300
+                    : 0),
+            )
+          : null;
+        const proteinMin = weight ? Math.round(weight * 1.6) : null;
+        const proteinMax = weight ? Math.round(weight * 2.2) : null;
+        const isCardioGoal =
+          goal.includes("cải thiện") || goal.includes("cardio");
+        const carbTarget = weight
+          ? Math.round(weight * (isCardioGoal ? 6 : 4))
+          : null;
+        const fatTarget = calTarget ? Math.round((calTarget * 0.25) / 9) : null;
+        const hrmax = age ? 220 - age : null;
+        const hrZoneLight = hrmax
+          ? `${Math.round(hrmax * 0.5)}–${Math.round(hrmax * 0.6)}`
+          : null;
+        const hrZoneMod = hrmax
+          ? `${Math.round(hrmax * 0.6)}–${Math.round(hrmax * 0.7)}`
+          : null;
+        const hrZoneHigh = hrmax
+          ? `${Math.round(hrmax * 0.7)}–${Math.round(hrmax * 0.85)}`
+          : null;
+
+        return `---
+Bạn là AI huấn luyện viên gym. Luôn trả lời tiếng Việt.
+KHÔNG tìm kiếm internet. Chỉ dùng dữ liệu khoa học đã cung cấp dưới đây.
+Khi đưa ra số liệu, LUÔN ghi nguồn trong ngoặc: [ACSM 2022], [Morton et al. 2018], v.v.
+
+=== HỒ SƠ NGƯỜI DÙNG ===
+Tên: ${profile.name}
+Tuổi: ${profile.age || "Chưa cung cấp"} | Giới tính: ${profile.gender || "Chưa cung cấp"}
+Cân nặng: ${profile.weight ? profile.weight + "kg" : "Chưa cung cấp"} | Chiều cao: ${profile.height ? profile.height + "cm" : "Chưa cung cấp"}
+BMI: ${bmi || "Chưa có"} ${bmiClass ? `(${bmiClass})` : ""} (phân loại chuẩn châu Á — WHO/Bộ Y tế VN 2020: Thiếu cân <18.5 | Bình thường 18.5–22.9 | Thừa cân 23–24.9 | Béo phì ≥25)
+Mục tiêu: ${profile.goal} | Trình độ: ${profile.level} | Số buổi/tuần: ${profile.days}
+
+=== CHỈ SỐ NĂNG LƯỢNG (ĐÃ TÍNH SẴN — DÙNG TRỰC TIẾP) ===
+BMR: ${bmr || "Chưa có"} kcal/ngày [Mifflin-St Jeor, Am J Clin Nutr 1990]
+TDEE: ${tdee || "Chưa có"} kcal/ngày [ACSM Guidelines 11th ed. 2022]
+Mục tiêu calo: ${calTarget || "Chưa có"} kcal/ngày [Thomas et al., J Acad Nutr Diet 2016]
+Mục tiêu protein: ${proteinMin || ""}–${proteinMax || ""}g/ngày [Morton et al., BJSM 2018]
+Mục tiêu carb: ${carbTarget || "Chưa có"}g/ngày | Mục tiêu fat: ${fatTarget || "Chưa có"}g/ngày [Thomas et al. 2016]
+
+=== NHỊP TIM MỤC TIÊU (ĐÃ TÍNH SẴN) ===
+HRmax: ${hrmax || "Chưa có"} bpm (220 - tuổi) [ACSM 2022]
+Zone nhẹ (an toàn tim mạch): ${hrZoneLight || "Chưa có"} bpm
+Zone vừa (đốt mỡ hiệu quả): ${hrZoneMod || "Chưa có"} bpm
+Zone cao (cải thiện cardio): ${hrZoneHigh || "Chưa có"} bpm
+
+=== TÌNH TRẠNG SỨC KHỎE ===
+Bệnh nền: ${conditions}
+Chấn thương/Vùng tránh: ${injuries}
+
+=== QUY TẮC AN TOÀN BẮT BUỘC ===
+${profile.conditions?.includes("Tim mạch / Huyết áp") ? `⚠️ TIM MẠCH (ACSM 2022 Ch.9): TUYỆT ĐỐI không đề xuất HIIT, sprint, bài compound nặng, Valsalva maneuver. Nhịp tim KHÔNG vượt ${hrZoneLight} bpm (zone nhẹ). Ưu tiên đi bộ, đạp xe nhẹ, bơi lội. Warm-up/cool-down tối thiểu 10 phút.` : ""}
+${profile.conditions?.includes("Tiểu đường") ? `⚠️ TIỂU ĐƯỜNG (ACSM 2022 Ch.10): Chỉ tập khi đường huyết 100–250 mg/dL. Tránh tập khi đói hoặc đường huyết <100 mg/dL. Mang đồ ăn ngọt bên cạnh. Tập resistance training 2–3x/tuần giúp cải thiện insulin sensitivity.` : ""}
+${profile.conditions?.includes("Xương khớp / Thoát vị đĩa đệm") ? `⚠️ XƯƠNG KHỚP (ACSM 2022 Ch.11 + NSCA 2016): TUYỆT ĐỐI không đề xuất Barbell Squat, Deadlift, Good Morning, bài tạo lực nén cột sống. Ưu tiên bơi lội (giảm 90% áp lực khớp), Dead Bug, Bird-dog, Plank nhẹ.` : ""}
+${profile.conditions?.includes("Hô hấp / Hen suyễn") ? `⚠️ HÔ HẤP (ACSM 2022 Ch.12): Cấm HIIT, sprint, burpee. Warm-up kéo dài ≥15 phút để tránh EIB. Ưu tiên bơi lội. Luôn có thuốc hít bên cạnh.` : ""}
+${profile.conditions?.includes("Béo phì / Thừa cân") ? `⚠️ BÉO PHÌ (ACSM 2022 + Thomas et al. 2016): Ưu tiên low-impact cardio (đi bộ, đạp xe, bơi). Bắt đầu 150 phút/tuần, tăng dần 250–300 phút/tuần. Thâm hụt calo tối đa 500 kcal/ngày.` : ""}
+${profile.injuries?.length ? `⚠️ CHẤN THƯƠNG (${injuries}) — NSCA 2016: TUYỆT ĐỐI không đề xuất bài tập tạo lực trực tiếp lên vùng này.` : ""}
+${profile.conditions?.length ? `⚠️ BẮT BUỘC: Kết thúc mỗi lời tư vấn bằng "Nên tham khảo bác sĩ chuyên khoa trước khi bắt đầu."` : ""}
+
+=== KIẾN THỨC KHOA HỌC NỀN (DÙNG KHI TƯ VẤN) ===
+
+[ACSM 2022 — Sets/Reps theo trình độ]
+Mới bắt đầu: 2–3 buổi/tuần, 1–3 sets, 8–12 reps, 60–70% 1RM, nghỉ 1–2 phút
+Trung bình:  3–4 buổi/tuần, 3–4 sets, 6–12 reps, 67–85% 1RM, nghỉ 1–2 phút
+Nâng cao:    4–6 buổi/tuần, 3–6 sets, 1–12 reps, 70–100% 1RM, nghỉ 2–3 phút
+Progressive overload: tăng tối đa 10%/tuần
+Warm-up 5–10 phút, cool-down 5–10 phút bắt buộc
+
+[ACSM 2022 — Cardio]
+Cường độ vừa: 150–300 phút/tuần
+Cường độ cao: 75–150 phút/tuần
+Hoặc kết hợp tương đương
+
+[Morton et al. 2018 — BJSM Meta-analysis, n=49 nghiên cứu]
+Protein tối ưu tăng cơ: 1.6–2.2g/kg/ngày
+Chia 3–5 bữa, mỗi bữa 0.3–0.4g/kg (tối ưu kích hoạt MPS)
+Whey sau tập (trong 30–60 phút): 20–40g
+Trên 65 tuổi: tăng lên 1.8–2.4g/kg/ngày
+
+[Thomas, Erdman & Burke 2016 — AND/DC/ACSM Position Statement]
+Carb tập tạ: 3–5g/kg/ngày
+Carb tập sức bền: 5–10g/kg/ngày
+Chất béo: 20–35% tổng calo, không được dưới 20%
+Nước: 500ml trước tập 2 giờ; 150–250ml mỗi 15–20 phút trong tập
+
+[NSCA Essentials of S&C, 4th ed. 2016]
+Thứ tự bài trong buổi: compound nặng trước, isolation sau
+Cơ cần 48–72 giờ phục hồi trước khi tập lại cùng nhóm
+Full-body: 2–3 buổi/tuần; Upper/Lower: 4 buổi; PPL: 5–6 buổi
+1RM ước tính (Epley): weight × (1 + reps/30)
+
+[Bộ Y tế Việt Nam 2020]
+Khuyến nghị ≥150 phút hoạt động thể lực/tuần
+Ưu tiên thực phẩm: gạo lứt, rau xanh, đậu hũ, cá, thịt nạc
+
+=== QUY TẮC ĐỊNH DẠNG ===
+- Dùng **IN ĐẬM** cho tiêu đề
+- Mỗi bài tập trên 1 dòng riêng, ghi rõ: Tên | Sets×Reps | Nghỉ | Nhóm cơ
+- Luôn ghi nguồn khi đưa ra số liệu
+- Cuối mỗi tư vấn về sức khỏe: thêm dòng "⚠️ Tư vấn tham khảo, không thay thế ý kiến bác sĩ"
+---`;
+      }
+
+      // ── SHARED UI ─────────────────────────────────────────────────
+      const chip = (active, small = false) => ({
+        background: active ? C.accent : C.surface,
+        color: active ? "#fff" : C.textSub,
+        border: `1.5px solid ${active ? C.accent : C.border}`,
+        borderRadius: 12,
+        padding: small ? "9px 14px" : "12px 18px",
+        cursor: "pointer",
+        fontSize: small ? 13 : 14,
+        fontWeight: active ? 600 : 400,
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
+        transition: "all 0.15s",
+        boxShadow: active ? `0 2px 8px ${C.accentGlow}` : C.cardShadow,
+      });
+      const primBtn = (ok) => ({
+        width: "100%",
+        marginTop: 24,
+        padding: "15px",
+        background: ok ? C.accent : C.border,
+        color: ok ? "#fff" : C.muted,
+        border: "none",
+        borderRadius: 14,
+        fontSize: 15,
+        fontWeight: 700,
+        cursor: ok ? "pointer" : "default",
+        transition: "all 0.2s",
+        boxShadow: ok ? `0 4px 16px ${C.accentGlow}` : "none",
+        letterSpacing: "0.02em",
+      });
+
+      // ════════════════════════════════════════════════════════════════
+      // PHẦN 1: DISCLAIMER
+      // ════════════════════════════════════════════════════════════════
+      function Disclaimer({ onAgree }) {
+        const [checked, setChecked] = useState(false);
+        const [now, setNow] = useState(new Date().toLocaleString("vi-VN"));
+
+        useEffect(() => {
+          const timer = setInterval(
+            () => setNow(new Date().toLocaleString("vi-VN")),
+            1000,
+          );
+          return () => clearInterval(timer);
+        }, []);
+
+        const handleAgree = () => {
+          const consentRecord = {
+            version: DISCLAIMER_VERSION,
+            agreedAt: new Date().toISOString(),
+            agreedAtLocal: new Date().toLocaleString("vi-VN"),
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            screenSize: `${window.screen.width}x${window.screen.height}`,
+          };
+          localStorage.setItem(
+            "ai_gym_coach_consent",
+            JSON.stringify(consentRecord),
+          );
+          onAgree();
+        };
+
+        return (
+          <div
+            className="screen-fullpage"
+            style={{
+              background: "linear-gradient(135deg,#eef2ff 0%,#ffffff 100%)",
+            }}
+          >
+            {/* LEFT — branding, desktop only */}
+            <div className="screen-left" style={{ display: "none" }}>
+              <div
+                style={{ width: "100%", maxWidth: 380, textAlign: "center" }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'Barlow Condensed',sans-serif",
+                    fontSize: 76,
+                    fontWeight: 900,
+                    color: "#111827",
+                    lineHeight: 0.95,
+                    marginBottom: 20,
+                  }}
+                >
+                  AI GYM
+                  <br />
+                  <span style={{ color: C.accent }}>COACH</span>
+                </div>
+                <p
+                  style={{
+                    color: "#6B7280",
+                    fontSize: 17,
+                    lineHeight: 1.8,
+                    marginBottom: 44,
+                  }}
+                >
+                  Huấn luyện viên thể hình cá nhân hóa bằng AI — Phân tích, lập
+                  kế hoạch và đồng hành cùng bạn mỗi ngày.
+                </p>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                >
+                  {[
+                    { icon: "🤖", text: "AI phân tích hồ sơ sức khỏe cá nhân" },
+                    {
+                      icon: "📅",
+                      text: "Lịch tập thông minh, điều chỉnh linh hoạt",
+                    },
+                    { icon: "🥗", text: "Tư vấn dinh dưỡng theo mục tiêu" },
+                    {
+                      icon: "❤️",
+                      text: "Theo dõi sức khỏe & check-in hàng ngày",
+                    },
+                  ].map((f, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        background: "rgba(15,23,42,0.06)",
+                        borderRadius: 14,
+                        padding: "14px 18px",
+                        border: "1px solid rgba(15,23,42,0.12)",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ fontSize: 24, flexShrink: 0 }}>
+                        {f.icon}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 14,
+                          color: "#6B7280",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {f.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT — form */}
+            <div
+              className="screen-right"
+              style={{ background: "rgba(255,255,255,0.95)" }}
+            >
+              <div style={{ animation: "fadeIn 0.4s ease" }}>
+                <div
+                  style={{
+                    width: 68,
+                    height: 68,
+                    borderRadius: "50%",
+                    background: "rgba(245,158,11,0.15)",
+                    border: `2px solid ${C.warn}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 30,
+                    margin: "0 auto 20px",
+                  }}
+                >
+                  ⚕️
+                </div>
+                <h1
+                  style={{
+                    fontFamily: "'Barlow Condensed',sans-serif",
+                    fontSize: 36,
+                    fontWeight: 900,
+                    color: C.text,
+                    textAlign: "center",
+                    marginBottom: 4,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  TUYÊN BỐ
+                  <br />
+                  <span style={{ color: C.warn }}>MIỄN TRỪ TRÁCH NHIỆM</span>
+                </h1>
+                <p
+                  style={{
+                    color: "#6B7280",
+                    fontSize: 11,
+                    textAlign: "center",
+                    marginBottom: 4,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Phiên bản {DISCLAIMER_VERSION} — Đọc kỹ trước khi sử dụng
+                </p>
+                <p
+                  style={{
+                    color: "#6B7280",
+                    fontSize: 11,
+                    textAlign: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  {APP_INFO.developer}
+                </p>
+
+                <div
+                  style={{
+                    background: "rgba(250,204,21,0.15)",
+                    border: "2px solid #FBBF24",
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 16,
+                    maxHeight: 280,
+                    overflowY: "auto",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "#92400E",
+                      lineHeight: 1.6,
+                      margin: 0,
+                      marginBottom: 10,
+                    }}
+                  >
+                    <strong style={{ color: "#FCD34D" }}>
+                      📋 Bản chất ứng dụng:
+                    </strong>{" "}
+                    Đây là ứng dụng nghiên cứu học thuật, KHÔNG phải sản phẩm y
+                    tế được cấp phép bởi Bộ Y tế Việt Nam hay bất kỳ cơ quan
+                    nào. AI Gym Coach sử dụng mô hình ngôn ngữ lớn (Gemini API)
+                    kết hợp tài liệu khoa học thể thao (ACSM 2022, NSCA 2016,
+                    Morton et al. 2018) để đưa ra gợi ý tham khảo. Mọi lời
+                    khuyên, lịch tập, chỉ số dinh dưỡng chỉ mang tính THAM KHẢO.
+                  </p>
+
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "#92400E",
+                      lineHeight: 1.6,
+                      margin: 0,
+                      marginBottom: 10,
+                    }}
+                  >
+                    <strong style={{ color: "#FCD34D" }}>
+                      ⚠️ Giới hạn trách nhiệm:
+                    </strong>{" "}
+                    {APP_INFO.developer} và {APP_INFO.contact} KHÔNG chịu trách
+                    nhiệm pháp lý đối với bất kỳ chấn thương, tổn hại sức khỏe
+                    hoặc hậu quả nào phát sinh từ việc áp dụng nội dung từ ứng
+                    dụng này. Người dùng hoàn toàn tự chịu trách nhiệm về quyết
+                    định tập luyện và dinh dưỡng của mình. AI có thể mắc lỗi
+                    (hallucination). Không có hệ thống AI nào đảm bảo 100% chính
+                    xác trong tư vấn sức khỏe.
+                  </p>
+
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "#92400E",
+                      lineHeight: 1.6,
+                      margin: 0,
+                      marginBottom: 10,
+                    }}
+                  >
+                    <strong style={{ color: "#FCD34D" }}>
+                      🚫 Không dành cho bạn nếu:
+                    </strong>{" "}
+                    (1) Bạn đang có chấn thương cấp tính hoặc bệnh lý chưa được
+                    chẩn đoán. (2) Bạn chưa từng được bác sĩ cho phép tập luyện
+                    thể thao. (3) Bạn dưới 15 tuổi hoặc đang mang thai. (4) Bạn
+                    có bệnh tim mạch, tiểu đường, hoặc bệnh hô hấp chưa được
+                    kiểm soát — hãy gặp bác sĩ TRƯỚC.
+                  </p>
+
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "#92400E",
+                      lineHeight: 1.6,
+                      margin: 0,
+                    }}
+                  >
+                    <strong style={{ color: "#FCD34D" }}>
+                      🔒 Dữ liệu & Quyền riêng tư:
+                    </strong>{" "}
+                    {APP_INFO.dataPolicy} Dữ liệu sức khỏe bạn nhập (bệnh nền,
+                    chấn thương, cân nặng...) chỉ dùng để cá nhân hóa lời khuyên
+                    trong phiên làm việc. Nhóm nghiên cứu không thu thập hay lưu
+                    trữ dữ liệu cá nhân của bạn trên bất kỳ server nào.
+                  </p>
+                </div>
+
+                <div
+                  onClick={() => setChecked(!checked)}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    padding: "10px 12px",
+                    background: checked
+                      ? "rgba(0,200,83,0.12)"
+                      : "rgba(15,23,42,0.04)",
+                    border: `1.5px solid ${checked ? C.accent : "rgba(15,23,42,0.08)"}`,
+                    borderRadius: 12,
+                    cursor: "pointer",
+                    marginBottom: 10,
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 4,
+                      background: checked ? C.accent : "rgba(15,23,42,0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      fontSize: 12,
+                      color: "#fff",
+                      fontWeight: 700,
+                      transition: "all 0.2s",
+                      marginTop: 2,
+                    }}
+                  >
+                    {checked ? "✓" : ""}
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: checked ? "#065F46" : "#6B7280",
+                      lineHeight: 1.4,
+                      fontWeight: checked ? 600 : 400,
+                      margin: 0,
+                    }}
+                  >
+                    Tôi đã đọc, hiểu và chấp nhận toàn bộ điều khoản trên. Tôi
+                    xác nhận mình đủ điều kiện sử dụng ứng dụng và tự chịu trách
+                    nhiệm về quyết định tập luyện của mình.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => checked && handleAgree()}
+                  style={{ ...primBtn(checked), marginTop: 10 }}
+                >
+                  Tôi đồng ý — Bắt đầu →
+                </button>
+                <p
+                  style={{
+                    color: "#6B7280",
+                    fontSize: 10,
+                    textAlign: "center",
+                    marginTop: 8,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Đồng ý lúc: {now}
+                  <br />
+                  Version {DISCLAIMER_VERSION} | {APP_INFO.purpose}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // PHẦN 2: ONBOARDING (4 bước, thêm Health Profile)
+      // ════════════════════════════════════════════════════════════════
+      function Onboarding({ onDone }) {
+        const [step, setStep] = useState(0);
+        // Step 0
+        const [name, setName] = useState("");
+        const [goal, setGoal] = useState("");
+        // Step 1
+        const [days, setDays] = useState(3);
+        const [level, setLevel] = useState("");
+        // Step 2 — Thông số cơ thể
+        const [age, setAge] = useState("");
+        const [gender, setGender] = useState("");
+        const [weight, setWeight] = useState("");
+        const [height, setHeight] = useState("");
+        // Step 3 — Bệnh nền & chấn thương
+        const [conditions, setConditions] = useState([]);
+        const [injuries, setInjuries] = useState([]);
+        const [healthNote, setHealthNote] = useState("");
+
+        const TOTAL_STEPS = 4;
+
+        const goals = [
+          { id: "giảm cân", icon: "🔥", label: "Giảm cân" },
+          { id: "tăng cơ bắp", icon: "💪", label: "Tăng cơ bắp" },
+          { id: "cải thiện thể lực", icon: "⚡", label: "Cải thiện thể lực" },
+        ];
+        const levels = [
+          { id: "mới bắt đầu", label: "Mới bắt đầu" },
+          { id: "trung bình", label: "Trung bình" },
+          { id: "nâng cao", label: "Nâng cao" },
+        ];
+        const COND_LIST = [
+          { id: "Tim mạch / Huyết áp", icon: "❤️" },
+          { id: "Tiểu đường", icon: "🩸" },
+          { id: "Xương khớp / Thoát vị đĩa đệm", icon: "🦴" },
+          { id: "Hô hấp / Hen suyễn", icon: "🫁" },
+          { id: "Béo phì / Thừa cân", icon: "⚖️" },
+          { id: "Khác", icon: "🏥" },
+        ];
+        const INJ_LIST = [
+          { id: "Đầu gối", icon: "🦵" },
+          { id: "Lưng / Cột sống", icon: "🔧" },
+          { id: "Vai / Cổ", icon: "💪" },
+          { id: "Cổ tay / Khuỷu tay", icon: "🤝" },
+          { id: "Mắt cá chân", icon: "🦶" },
+          { id: "Hông", icon: "🏃" },
+        ];
+
+        const toggleArr = (arr, setArr, val) =>
+          arr.includes(val)
+            ? setArr(arr.filter((x) => x !== val))
+            : setArr([...arr, val]);
+
+        const canNext = [
+          name.trim() && goal,
+          !!level,
+          true, // body stats optional
+          true, // health conditions optional
+        ];
+
+        const handleDone = () => {
+          onDone({
+            name,
+            goal,
+            days,
+            level,
+            age,
+            gender,
+            weight,
+            height,
+            conditions,
+            injuries,
+            healthNote,
+          });
+        };
+
+        return (
+          <div className="screen-fullpage" style={{ background: C.bg }}>
+            {/* LEFT — step tracker, desktop only */}
+            <div className="screen-left" style={{ display: "none" }}>
+              <div style={{ width: "100%", maxWidth: 360 }}>
+                <div
+                  style={{
+                    fontFamily: "'Barlow Condensed',sans-serif",
+                    fontSize: 60,
+                    fontWeight: 900,
+                    color: "#111827",
+                    lineHeight: 0.95,
+                    marginBottom: 16,
+                    textAlign: "center",
+                  }}
+                >
+                  AI GYM
+                  <br />
+                  <span style={{ color: C.accent }}>COACH</span>
+                </div>
+                <p
+                  style={{
+                    color: "#6B7280",
+                    fontSize: 15,
+                    lineHeight: 1.7,
+                    marginBottom: 36,
+                    textAlign: "center",
+                  }}
+                >
+                  Chỉ vài bước để cá nhân hóa
+                  <br />
+                  trải nghiệm tập luyện của bạn.
+                </p>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 10 }}
+                >
+                  {[
+                    "Tên & Mục tiêu",
+                    "Lịch tập & Trình độ",
+                    "Thông số cơ thể",
+                    "Sức khỏe & Bệnh nền",
+                  ].map((s, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        padding: "13px 16px",
+                        borderRadius: 14,
+                        background:
+                          i === step
+                            ? "rgba(0,200,83,0.15)"
+                            : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${i === step ? C.accent : "rgba(255,255,255,0.07)"}`,
+                        transition: "all 0.3s",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          flexShrink: 0,
+                          background:
+                            i < step
+                              ? C.accent
+                              : i === step
+                                ? C.accent
+                                : "rgba(255,255,255,0.1)",
+                          color: i <= step ? "#fff" : "#6B7280",
+                        }}
+                      >
+                        {i < step ? "✓" : i + 1}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 14,
+                          color: i === step ? "#111827" : "#6B7280",
+                          fontWeight: i === step ? 600 : 400,
+                        }}
+                      >
+                        {s}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT — form */}
+            <div className="screen-right">
+              <div
+                style={{
+                  animation: "fadeIn 0.3s ease",
+                  background: C.surface,
+                  borderRadius: 24,
+                  padding: "28px 24px",
+                  boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+                }}
+              >
+                {/* Progress dots */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 5,
+                    marginBottom: 32,
+                    justifyContent: "center",
+                  }}
+                >
+                  {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        height: 4,
+                        width: i === step ? 28 : 8,
+                        borderRadius: 2,
+                        background: i <= step ? C.accent : C.border,
+                        transition: "all 0.3s",
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* ── STEP 0 ── */}
+                {step === 0 && (
+                  <>
+                    <h1
+                      style={{
+                        fontFamily: "'Barlow Condensed',sans-serif",
+                        fontSize: 46,
+                        fontWeight: 900,
+                        color: C.text,
+                        lineHeight: 1.05,
+                        marginBottom: 8,
+                      }}
+                    >
+                      XIN CHÀO!
+                      <br />
+                      <span style={{ color: C.accent }}>BẮT ĐẦU NÀO</span>
+                    </h1>
+                    <p
+                      style={{ color: C.muted, fontSize: 14, marginBottom: 28 }}
+                    >
+                      Cho mình biết một chút về bạn
+                    </p>
+                    <div style={label}>TÊN CỦA BẠN</div>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Nhập tên..."
+                      style={{ ...inputStyle, marginBottom: 22 }}
+                    />
+                    <div style={label}>MỤC TIÊU TẬP LUYỆN</div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 9,
+                        marginTop: 8,
+                      }}
+                    >
+                      {goals.map((g) => (
+                        <button
+                          key={g.id}
+                          onClick={() => setGoal(g.id)}
+                          style={chip(goal === g.id)}
+                        >
+                          <span style={{ fontSize: 22 }}>{g.icon}</span>
+                          {g.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => canNext[0] && setStep(1)}
+                      style={primBtn(canNext[0])}
+                    >
+                      Tiếp theo →
+                    </button>
+                  </>
+                )}
+
+                {/* ── STEP 1 ── */}
+                {step === 1 && (
+                  <>
+                    <h1
+                      style={{
+                        fontFamily: "'Barlow Condensed',sans-serif",
+                        fontSize: 42,
+                        fontWeight: 900,
+                        color: C.text,
+                        lineHeight: 1.05,
+                        marginBottom: 8,
+                      }}
+                    >
+                      KẾ HOẠCH
+                      <br />
+                      <span style={{ color: C.accent }}>TẬP LUYỆN</span>
+                    </h1>
+                    <p
+                      style={{ color: C.muted, fontSize: 14, marginBottom: 28 }}
+                    >
+                      Tùy chỉnh phù hợp với bạn
+                    </p>
+
+                    <div style={label}>SỐ BUỔI / TUẦN</div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 9,
+                        marginTop: 8,
+                        marginBottom: 22,
+                      }}
+                    >
+                      {[3, 4, 5].map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => setDays(d)}
+                          style={{
+                            ...chip(days === d),
+                            flex: 1,
+                            justifyContent: "center",
+                          }}
+                        >
+                          {d} buổi
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={label}>TRÌNH ĐỘ HIỆN TẠI</div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 9,
+                        marginTop: 8,
+                      }}
+                    >
+                      {levels.map((l) => (
+                        <button
+                          key={l.id}
+                          onClick={() => setLevel(l.id)}
+                          style={chip(level === l.id)}
+                        >
+                          {l.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => level && setStep(2)}
+                      style={primBtn(!!level)}
+                    >
+                      Tiếp theo →
+                    </button>
+                    <button
+                      onClick={() => setStep(0)}
+                      style={{
+                        display: "block",
+                        margin: "14px auto 0",
+                        background: "none",
+                        border: "none",
+                        color: C.muted,
+                        fontSize: 13,
+                      }}
+                    >
+                      ← Quay lại
+                    </button>
+                  </>
+                )}
+
+                {/* ── STEP 2: Thông số cơ thể ── */}
+                {step === 2 && (
+                  <>
+                    <h1
+                      style={{
+                        fontFamily: "'Barlow Condensed',sans-serif",
+                        fontSize: 42,
+                        fontWeight: 900,
+                        color: C.text,
+                        lineHeight: 1.05,
+                        marginBottom: 8,
+                      }}
+                    >
+                      THÔNG SỐ
+                      <br />
+                      <span style={{ color: C.accent }}>CƠ THỂ</span>
+                    </h1>
+                    <p
+                      style={{
+                        color: C.muted,
+                        fontSize: 14,
+                        marginBottom: 6,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Giúp AI tính BMI & TDEE chính xác hơn
+                    </p>
+                    <div
+                      style={{
+                        background: "#EFF6FF",
+                        border: `1px solid #BFDBFE`,
+                        borderRadius: 10,
+                        padding: "10px 14px",
+                        marginBottom: 22,
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <span style={{ fontSize: 16 }}>💡</span>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "#1E40AF",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        Thông tin này là tùy chọn nhưng giúp AI đưa ra lộ trình
+                        chính xác hơn nhiều.
+                      </p>
+                    </div>
+
+                    <div style={label}>TUỔI</div>
+                    <input
+                      type="number"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      placeholder="Ví dụ: 22"
+                      style={{ ...inputStyle, marginBottom: 16 }}
+                    />
+
+                    <div style={label}>GIỚI TÍNH</div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 9,
+                        marginTop: 8,
+                        marginBottom: 16,
+                      }}
+                    >
+                      {[
+                        { id: "Nam", icon: "♂️" },
+                        { id: "Nữ", icon: "♀️" },
+                        { id: "Khác", icon: "⚧️" },
+                      ].map((g) => (
+                        <button
+                          key={g.id}
+                          onClick={() => setGender(g.id)}
+                          style={{
+                            ...chip(gender === g.id),
+                            flex: 1,
+                            justifyContent: "center",
+                            fontSize: 13,
+                          }}
+                        >
+                          {g.icon} {g.id}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ display: "flex", gap: 12, marginBottom: 4 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={label}>CÂN NẶNG (kg)</div>
+                        <input
+                          type="number"
+                          value={weight}
+                          onChange={(e) => setWeight(e.target.value)}
+                          placeholder="Ví dụ: 65"
+                          style={{ ...inputStyle, marginTop: 8 }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={label}>CHIỀU CAO (cm)</div>
+                        <input
+                          type="number"
+                          value={height}
+                          onChange={(e) => setHeight(e.target.value)}
+                          placeholder="Ví dụ: 170"
+                          style={{ ...inputStyle, marginTop: 8 }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* BMI Preview Mới - Trực quan và chuyên nghiệp hơn */}
+                    {weight && height && (
+                      <BMICard weight={weight} height={height} />
+                    )}
+
+                    <button onClick={() => setStep(3)} style={primBtn(true)}>
+                      Tiếp theo →
+                    </button>
+                    <button
+                      onClick={() => setStep(1)}
+                      style={{
+                        display: "block",
+                        margin: "14px auto 0",
+                        background: "none",
+                        border: "none",
+                        color: C.muted,
+                        fontSize: 13,
+                      }}
+                    >
+                      ← Quay lại
+                    </button>
+                  </>
+                )}
+
+                {/* ── STEP 3: Bệnh nền & Chấn thương ── */}
+                {step === 3 && (
+                  <>
+                    <h1
+                      style={{
+                        fontFamily: "'Barlow Condensed',sans-serif",
+                        fontSize: 42,
+                        fontWeight: 900,
+                        color: C.text,
+                        lineHeight: 1.05,
+                        marginBottom: 8,
+                      }}
+                    >
+                      SỨC KHỎE
+                      <br />
+                      <span style={{ color: C.warn }}>CỦA BẠN</span>
+                    </h1>
+
+                    {/* Warning box */}
+                    <div
+                      style={{
+                        background: C.warnBg,
+                        border: `1px solid ${C.warn}`,
+                        borderRadius: 12,
+                        padding: "12px 16px",
+                        marginBottom: 22,
+                        display: "flex",
+                        gap: 10,
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <span style={{ fontSize: 20, flexShrink: 0 }}>⚕️</span>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "#92400E",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        Thông tin này giúp AI tránh đề xuất bài tập nguy hiểm
+                        cho bạn. Hãy cung cấp chính xác để được tư vấn an toàn
+                        nhất.
+                      </p>
+                    </div>
+
+                    <div style={label}>BỆNH NỀN (chọn tất cả phù hợp)</div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 8,
+                        marginTop: 8,
+                        marginBottom: 20,
+                      }}
+                    >
+                      {COND_LIST.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() =>
+                            toggleArr(conditions, setConditions, c.id)
+                          }
+                          style={{
+                            ...chip(conditions.includes(c.id), true),
+                            justifyContent: "flex-start",
+                          }}
+                        >
+                          <span style={{ fontSize: 16 }}>{c.icon}</span>
+                          <span style={{ fontSize: 12, lineHeight: 1.3 }}>
+                            {c.id}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={label}>CHẤN THƯƠNG / VÙNG CẦN TRÁNH</div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 8,
+                        marginTop: 8,
+                        marginBottom: 16,
+                      }}
+                    >
+                      {INJ_LIST.map((inj) => (
+                        <button
+                          key={inj.id}
+                          onClick={() =>
+                            toggleArr(injuries, setInjuries, inj.id)
+                          }
+                          style={{
+                            ...chip(injuries.includes(inj.id), true),
+                            justifyContent: "flex-start",
+                          }}
+                        >
+                          <span style={{ fontSize: 16 }}>{inj.icon}</span>
+                          <span style={{ fontSize: 12 }}>{inj.id}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={label}>GHI CHÚ SỨC KHỎE KHÁC</div>
+                    <textarea
+                      value={healthNote}
+                      onChange={(e) => setHealthNote(e.target.value)}
+                      placeholder="Ví dụ: Tôi đang dùng thuốc huyết áp, hay bị chóng mặt khi tập nặng..."
+                      style={{
+                        ...inputStyle,
+                        marginTop: 8,
+                        minHeight: 70,
+                        resize: "vertical",
+                      }}
+                    />
+
+                    {(conditions.length > 0 || injuries.length > 0) && (
+                      <div
+                        style={{
+                          marginTop: 12,
+                          padding: "10px 14px",
+                          background: C.warnBg,
+                          border: `1px solid ${C.warn}`,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <p
+                          style={{
+                            fontSize: 12,
+                            color: "#92400E",
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          ⚕️ AI sẽ tự động điều chỉnh lịch tập và luôn nhắc bạn
+                          tham khảo ý kiến bác sĩ khi cần.
+                        </p>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleDone}
+                      style={{ ...primBtn(true), background: C.accent }}
+                    >
+                      Bắt đầu tập luyện 🚀
+                    </button>
+                    <button
+                      onClick={() => setStep(2)}
+                      style={{
+                        display: "block",
+                        margin: "14px auto 0",
+                        background: "none",
+                        border: "none",
+                        color: C.muted,
+                        fontSize: 13,
+                      }}
+                    >
+                      ← Quay lại
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // CHAT
+      // ════════════════════════════════════════════════════════════════
+      function Chat({ profile, initMsgs, onMsgsChange }) {
+        const defaultMsg = [
+          {
+            role: "assistant",
+            content: `Chào ${profile.name}! 💪\nMình là AI Coach của bạn.\n\nHỏi mình bất cứ điều gì về tập luyện!`,
+          },
+        ];
+        const [msgs, setMsgs] = useState(initMsgs || defaultMsg);
+        const [input, setInput] = useState("");
+        const [loading, setLoading] = useState(false);
+        const bottomRef = useRef(null);
+        useEffect(() => {
+          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, [msgs]);
+
+        const SYS = buildSystemPrompt(profile);
+
+        const QUICK = [
+          "Bài tập phù hợp hôm nay?",
+          "Cách khởi động đúng?",
+          "Tôi muốn tăng cơ, nên làm gì?",
+        ];
+
+        const send = async () => {
+          if (!input.trim() || loading) return;
+          const u = { role: "user", content: input };
+          const next = [...msgs, u];
+          setMsgs(next);
+          onMsgsChange?.(next);
+          setInput("");
+          setLoading(true);
+          const reply = await askAI(next, SYS);
+          const final = [...next, { role: "assistant", content: reply }];
+          setMsgs(final);
+          onMsgsChange?.(final);
+          setLoading(false);
+        };
+
+        return (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              minHeight: 0,
+              background: C.bg,
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                background: C.bg,
+                backgroundImage:
+                  "radial-gradient(circle at 50% 10%, rgba(0, 200, 83, 0.03) 0%, transparent 80%)",
+              }}
+            >
+              {msgs.map((m, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    justifyContent:
+                      m.role === "user" ? "flex-end" : "flex-start",
+                    alignItems: "flex-end",
+                    gap: 10,
+                  }}
+                >
+                  {m.role === "assistant" && (
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "50%",
+                        background: C.accentGlow,
+                        border: `1px solid ${C.accent}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 16,
+                        flexShrink: 0,
+                      }}
+                    >
+                      🤖
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      maxWidth: "80%",
+                      background: m.role === "user" ? C.accent : C.card,
+                      color: m.role === "user" ? "#000" : C.text,
+                      borderRadius:
+                        m.role === "user"
+                          ? "18px 18px 4px 18px"
+                          : "4px 18px 18px 18px",
+                      padding: "12px 16px",
+                      fontSize: "14px",
+                      lineHeight: "1.7",
+                      whiteSpace: "pre-wrap",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      border:
+                        m.role === "assistant"
+                          ? `1px solid ${C.border}`
+                          : "none",
+                    }}
+                  >
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div
+                  style={{ display: "flex", alignItems: "flex-end", gap: 10 }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: C.accentGlow,
+                      border: `1px solid ${C.accent}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    🤖
+                  </div>
+                  <div
+                    style={{
+                      background: C.card,
+                      padding: "12px 20px",
+                      borderRadius: "4px 18px 18px 18px",
+                      border: `1px solid ${C.border}`,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: C.accent,
+                        letterSpacing: 4,
+                        fontSize: 20,
+                      }}
+                    >
+                      •••
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            {msgs.length === 1 && !loading && (
+              <div
+                style={{
+                  padding: "0 16px 8px",
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                }}
+              >
+                {QUICK.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => setInput(q)}
+                    style={{
+                      background: C.card,
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 20,
+                      padding: "6px 12px",
+                      color: C.muted,
+                      fontSize: 12,
+                    }}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div
+              style={{
+                padding: "16px 20px",
+                background: C.surface,
+                borderTop: `1px solid ${C.border}`,
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+              }}
+            >
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && send()}
+                placeholder="Hỏi coach..."
+                style={{
+                  ...inputStyle,
+                  flex: 1,
+                  marginTop: 0,
+                  borderRadius: 24,
+                }}
+              />
+              <button
+                onClick={send}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "50%",
+                  background: loading ? C.border : C.accent,
+                  border: "none",
+                  color: "#000",
+                  fontSize: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: loading ? "default" : "pointer",
+                  boxShadow: loading ? "none" : `0 4px 12px ${C.accentGlow}`,
+                }}
+              >
+                {loading ? "..." : "↑"}
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // EXERCISE DATABASE
+      // ════════════════════════════════════════════════════════════════
+      const EXERCISE_DB = {
+        splitRules: {
+          2: {
+            name: "Full Body x2",
+            rule: "Toàn thân, cách nhau tối thiểu 48h — NSCA 2016",
+          },
+          3: {
+            name: "Full Body x3",
+            rule: "Toàn thân, tập T2-T4-T6 hoặc T2-T4-T7 — NSCA 2016",
+          },
+          4: {
+            name: "Upper/Lower Split",
+            rule: "Upper: T2-T5 | Lower: T3-T6. Không tập cùng nhóm cơ lớn 2 ngày liên tiếp — NSCA 2016",
+          },
+          5: {
+            name: "Push/Pull/Legs",
+            rule: "Push-Pull-Legs-Rest-Push-Pull-Legs. Mỗi nhóm cơ được tập 2x/tuần — NSCA 2016",
+          },
+          6: {
+            name: "PPL x2",
+            rule: "Push-Pull-Legs lặp 2 vòng, nghỉ CN. Chỉ phù hợp trình độ nâng cao — NSCA 2016",
+          },
+        },
+
+        volumeRules: {
+          "giảm cân": {
+            sets: "3–4",
+            reps: "12–15",
+            rest: "60 giây",
+            source: "ACSM 2022 — muscular endurance range, tối ưu calorie burn",
+          },
+          "tăng cơ bắp": {
+            sets: "3–5",
+            reps: "6–12",
+            rest: "60–90 giây",
+            source: "ACSM 2022 + NSCA 2016 — hypertrophy range",
+          },
+          "cải thiện thể lực": {
+            sets: "2–3",
+            reps: "12–20",
+            rest: "30–60 giây",
+            source: "ACSM 2022 — aerobic/muscular endurance",
+          },
+        },
+
+        exercises: {
+          chest: [
+            {
+              name: "Bench Press (tạ đòn)",
+              sets: "4x8",
+              level: ["trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ", "Cổ tay / Khuỷu tay"],
+              note: "Hạ tạ chậm 3 giây, không khóa khuỷu",
+            },
+            {
+              name: "Dumbbell Chest Press",
+              sets: "3x12",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ"],
+              note: "ROM đầy đủ, hạ ngang ngực",
+            },
+            {
+              name: "Incline Dumbbell Press",
+              sets: "3x12",
+              level: ["trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ"],
+              note: "Góc ghế 30–45 độ",
+            },
+            {
+              name: "Push-up",
+              sets: "3x15",
+              level: ["mới bắt đầu"],
+              contraindications: ["Cổ tay / Khuỷu tay"],
+              note: "Giữ thẳng lưng, không võng hông",
+            },
+            {
+              name: "Cable Fly",
+              sets: "3x15",
+              level: ["trung bình", "nâng cao"],
+              contraindications: [],
+              note: "Căng cơ ngực ở điểm giữa",
+            },
+          ],
+          back: [
+            {
+              name: "Pull-up / Chin-up",
+              sets: "4x6",
+              level: ["trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ", "Cổ tay / Khuỷu tay"],
+              note: "Không đu lắc, kéo bằng lưng",
+            },
+            {
+              name: "Lat Pulldown",
+              sets: "4x10",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ"],
+              note: "Kéo xuống ngang cằm, ngả người nhẹ",
+            },
+            {
+              name: "Seated Cable Row",
+              sets: "3x12",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Lưng / Cột sống"],
+              note: "Giữ lưng thẳng, kéo về rốn",
+            },
+            {
+              name: "Dumbbell Row",
+              sets: "3x12",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Lưng / Cột sống"],
+              note: "Tựa tay lên ghế, kéo tạ lên hông",
+            },
+            {
+              name: "Romanian Deadlift",
+              sets: "3x10",
+              level: ["trung bình", "nâng cao"],
+              contraindications: ["Lưng / Cột sống"],
+              note: "Giữ lưng thẳng, cảm cơ đùi sau",
+            },
+          ],
+          legs: [
+            {
+              name: "Goblet Squat",
+              sets: "3x15",
+              level: ["mới bắt đầu"],
+              contraindications: ["Đầu gối", "Hông"],
+              note: "Ngồi xuống đến song song, gối theo hướng ngón chân",
+            },
+            {
+              name: "Barbell Squat",
+              sets: "4x8",
+              level: ["trung bình", "nâng cao"],
+              contraindications: ["Đầu gối", "Lưng / Cột sống", "Hông"],
+              note: "Gối không vượt ngón chân, lưng thẳng",
+            },
+            {
+              name: "Leg Press",
+              sets: "4x12",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Lưng / Cột sống"],
+              note: "An toàn thay thế squat khi có bệnh lưng",
+            },
+            {
+              name: "Leg Curl (nằm)",
+              sets: "3x12",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Đầu gối"],
+              note: "Giữ hông sát đệm, cuộn chậm",
+            },
+            {
+              name: "Leg Extension",
+              sets: "3x15",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Đầu gối"],
+              note: "Không khóa gối, dừng trước 180 độ",
+            },
+            {
+              name: "Calf Raise",
+              sets: "4x20",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Mắt cá chân"],
+              note: "Đứng trên bậc, hạ gót thấp hết cỡ",
+            },
+          ],
+          shoulders: [
+            {
+              name: "Dumbbell Shoulder Press",
+              sets: "3x12",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ"],
+              note: "Không đẩy thẳng đứng hoàn toàn nếu đau vai",
+            },
+            {
+              name: "Lateral Raise",
+              sets: "3x15",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ"],
+              note: "Tạ nhẹ, nâng ngang vai, không lắc",
+            },
+            {
+              name: "Front Raise",
+              sets: "3x12",
+              level: ["mới bắt đầu", "trung bình"],
+              contraindications: ["Vai / Cổ"],
+              note: "Xen kẽ tay trái phải",
+            },
+            {
+              name: "Face Pull",
+              sets: "3x15",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: [],
+              note: "Tốt cho sức khỏe vai và tư thế",
+            },
+          ],
+          arms: [
+            {
+              name: "Barbell Curl",
+              sets: "3x12",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Cổ tay / Khuỷu tay"],
+              note: "Không đung đưa người, khuỷu cố định",
+            },
+            {
+              name: "Hammer Curl",
+              sets: "3x12",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Cổ tay / Khuỷu tay"],
+              note: "Nhẹ hơn barbell curl, an toàn hơn",
+            },
+            {
+              name: "Tricep Pushdown",
+              sets: "3x15",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Cổ tay / Khuỷu tay"],
+              note: "Khuỷu sát người, đẩy thẳng hoàn toàn",
+            },
+            {
+              name: "Overhead Tricep Extension",
+              sets: "3x12",
+              level: ["trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ", "Cổ tay / Khuỷu tay"],
+              note: "Giữ khuỷu gần tai",
+            },
+            {
+              name: "Dip (song song)",
+              sets: "3x10",
+              level: ["trung bình", "nâng cao"],
+              contraindications: ["Vai / Cổ", "Cổ tay / Khuỷu tay"],
+              note: "Ngả người nhẹ để nhắm tricep",
+            },
+          ],
+          core: [
+            {
+              name: "Plank",
+              sets: "3x45s",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: ["Lưng / Cột sống"],
+              note: "Giữ thẳng từ đầu đến gót, không võng",
+            },
+            {
+              name: "Dead Bug",
+              sets: "3x10",
+              level: ["mới bắt đầu"],
+              contraindications: [],
+              note: "Bài tập lõi an toàn nhất, phù hợp bệnh lưng",
+            },
+            {
+              name: "Cable Crunch",
+              sets: "3x15",
+              level: ["trung bình", "nâng cao"],
+              contraindications: ["Lưng / Cột sống"],
+              note: "Cúi từ cơ bụng, không từ hông",
+            },
+            {
+              name: "Hanging Leg Raise",
+              sets: "3x12",
+              level: ["nâng cao"],
+              contraindications: ["Vai / Cổ", "Lưng / Cột sống"],
+              note: "Giữ chân thẳng, không đung đưa",
+            },
+          ],
+          cardio_safe: [
+            {
+              name: "Đi bộ nhanh 20 phút",
+              sets: "1x20p",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: [],
+              note: "Nhịp tim 50–65% HRmax — AN TOÀN tim mạch",
+            },
+            {
+              name: "Đạp xe tĩnh 20 phút",
+              sets: "1x20p",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: [],
+              note: "Không tạo xung lực — phù hợp xương khớp",
+            },
+            {
+              name: "Bơi lội 20 phút",
+              sets: "1x20p",
+              level: ["mới bắt đầu", "trung bình", "nâng cao"],
+              contraindications: [],
+              note: "Tốt nhất cho tim mạch và xương khớp",
+            },
+          ],
+        },
+
+        HARD_RULES: {
+          contraindicationRules: {
+            "Tim mạch / Huyết áp": [
+              "Barbell Squat",
+              "Barbell Deadlift",
+              "HIIT",
+              "Sprint",
+              "Barbell Bench Press",
+              "Heavy Compound",
+              "Box Jump",
+              "Burpee",
+            ],
+            "Xương khớp / Thoát vị đĩa đệm": [
+              "Barbell Squat",
+              "Barbell Deadlift",
+              "Hanging Leg Raise",
+              "Good Morning",
+              "Jefferson Curl",
+              "High Impact",
+            ],
+            "Hô hấp / Hen suyễn": ["HIIT", "Sprint", "Burpee", "Box Jump"],
+            "Tiểu đường": [],
+            "Béo phì / Thừa cân": [
+              "Box Jump",
+              "Sprint",
+              "Barbell Squat",
+              "High Impact",
+            ],
+          },
+        },
+
+        contraindicationRules: {
+          "Tim mạch / Huyết áp": [
+            "Barbell Squat",
+            "Barbell Deadlift",
+            "HIIT",
+            "Sprint",
+            "Heavy Compound",
+          ],
+          "Xương khớp / Thoát vị đĩa đệm": [
+            "Barbell Squat",
+            "Barbell Deadlift",
+            "Hanging Leg Raise",
+            "High Impact",
+          ],
+          "Hô hấp / Hen suyễn": ["HIIT", "Sprint", "Burpee", "Box Jump"],
+        },
+      };
+
+      const CHECK_IN_RULES = {
+        mustRest: [
+          {
+            condition: "energy <= 1",
+            reason: "Năng lượng quá thấp — nguy cơ chấn thương cao (ACSM 2022)",
+          },
+          {
+            condition: "soreness >= 5",
+            reason:
+              "DOMS nặng — cơ chưa phục hồi, tiếp tục tập gây tổn thương cơ (ACSM 2022)",
+          },
+          {
+            condition: "sleep <= 1",
+            reason:
+              "Ngủ < 4 tiếng — GH (Growth Hormone) không được tiết đủ, tập phản tác dụng (Thomas et al. 2016)",
+          },
+        ],
+        lightOnly: [
+          {
+            condition: "energy == 2",
+            reason: "Năng lượng thấp — chỉ tập 50% cường độ bình thường",
+          },
+          {
+            condition: "soreness == 4",
+            reason:
+              "DOMS trung bình — chuyển sang nhóm cơ khác hoặc cardio nhẹ (NSCA 2016)",
+          },
+          {
+            condition: "sleep == 2",
+            reason: "Ngủ kém — giảm cường độ 30–40% (Thomas et al. 2016)",
+          },
+        ],
+      };
+
+      // ── HÀM LỌC BÀI TẬP PHÙ HỢP VỚI NGƯỜI DÙNG ─────────
+      function getEligibleExercises(profile) {
+        const result = {};
+        const userInjuries = profile.injuries || [];
+        const userConditions = profile.conditions || [];
+        const userLevel = profile.level;
+
+        Object.entries(EXERCISE_DB.exercises).forEach(([group, exercises]) => {
+          result[group] = exercises.filter((ex) => {
+            const levelOk = ex.level.includes(userLevel);
+            const injuryOk = !ex.contraindications.some((c) =>
+              userInjuries.includes(c),
+            );
+            const conditionOk = !userConditions.some((cond) => {
+              const banned = [
+                ...(EXERCISE_DB.contraindicationRules[cond] || []),
+                ...(EXERCISE_DB.HARD_RULES?.contraindicationRules[cond] || []),
+              ];
+              return banned.some((bannedName) => ex.name.includes(bannedName));
+            });
+            return levelOk && injuryOk && conditionOk;
+          });
+        });
+        return result;
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // SCHEDULE
+      // ════════════════════════════════════════════════════════════════
+      function Schedule({ profile, savedPlan, onPlanChange }) {
+        const [plan, setPlan] = useState(savedPlan || null);
+        // Sync về App khi plan thay đổi
+        const updatePlan = (p) => {
+          setPlan(p);
+          onPlanChange?.(p);
+        };
+        const [loading, setLoading] = useState(false);
+
+        const generate = async () => {
+          setLoading(true);
+          const eligible = getEligibleExercises(profile);
+          const volume = EXERCISE_DB.volumeRules[profile.goal];
+          const split =
+            EXERCISE_DB.splitRules[profile.days] || EXERCISE_DB.splitRules[3];
+
+          const schedulePrompt = `
+Tạo lịch tập 7 ngày. Chỉ dùng bài tập trong danh sách được phép dưới đây.
+KHÔNG thêm bài nào ngoài danh sách. KHÔNG tự bịa số liệu.
+
+=== QUY TẮC PHÂN CHIA (NSCA 2016) ===
+Kiểu split: ${split.name}
+Quy tắc: ${split.rule}
+Số ngày tập: ${profile.days} | Số ngày nghỉ: ${7 - profile.days}
+
+=== VOLUME MỤC TIÊU (${profile.goal.toUpperCase()}) ===
+Sets: ${volume.sets} | Reps: ${volume.reps} | Nghỉ: ${volume.rest}
+Căn cứ: ${volume.source}
+
+=== QUY TẮC CỨNG BẮT BUỘC ===
+1. Không xếp cùng nhóm cơ lớn (ngực/lưng/chân) 2 ngày liên tiếp — NSCA 2016
+2. Bài compound nặng (Squat, Deadlift, Bench) PHẢI xếp đầu buổi — NSCA 2016
+3. Mỗi buổi: 4–5 bài, tổng thời gian 45–60 phút — ACSM 2022
+4. Warm-up 5–10 phút và cool-down 5 phút PHẢI có trong mỗi ngày tập
+5. Ngày nghỉ ghi rõ: "Nghỉ ngơi hoặc đi bộ nhẹ 20–30 phút"
+
+=== DANH SÁCH BÀI TẬP ĐƯỢC PHÉP ===
+${JSON.stringify(eligible, null, 2)}
+
+=== ĐỊNH DẠNG OUTPUT (JSON THUẦN TÚY, KHÔNG markdown) ===
+{
+  "days": [
+    {
+      "day": "Thứ 2",
+      "rest": false,
+      "focus": "Ngực & Vai (Push)",
+      "duration": "55 phút",
+      "warmup": "5 phút cardio nhẹ + xoay khớp",
+      "exercises": [
+        {
+          "name": "Tên bài từ DB",
+          "sets": "3x10",
+          "rest": "90 giây",
+          "muscle": "Ngực",
+          "note": "Note từ DB"
+        }
+      ],
+      "cooldown": "5 phút stretching"
+    }
+  ]
+}
+`;
+          const prompt = schedulePrompt;
+
+          const tryGenerate = async () => {
+            const raw = await askAI(
+              [{ role: "user", content: prompt }],
+              buildSystemPrompt(profile),
+            );
+            // Tìm JSON trong response dù có markdown hay không
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error("No JSON found");
+            const parsed = JSON.parse(jsonMatch[0]);
+            // Chấp nhận cả "days", "schedule", "weekly_plan"
+            const days = parsed.days || parsed.schedule || parsed.weekly_plan;
+            if (!days || !Array.isArray(days) || days.length === 0)
+              throw new Error("No days array");
+            return { days };
+          };
+
+          try {
+            // Thử lần 1
+            const result = await tryGenerate();
+            updatePlan(result);
+          } catch (e1) {
+            // Tự động thử lại lần 2 sau 2 giây
+            try {
+              await new Promise((r) => setTimeout(r, 2000));
+              const result = await tryGenerate();
+              updatePlan(result);
+            } catch (e2) {
+              updatePlan({ error: true });
+            }
+          }
+          setLoading(false);
+        };
+
+        // ── Guard: nếu plan lỗi hoặc không có days thì reset về null ──
+        const planDays =
+          plan?.days || plan?.schedule || plan?.weekly_plan || null;
+        const planOk =
+          planDays && Array.isArray(planDays) && planDays.length > 0;
+
+        if (!plan && !loading)
+          return (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: 1,
+                minHeight: 0,
+                gap: 16,
+                padding: 24,
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 60 }}>📅</div>
+              <h2
+                style={{
+                  fontFamily: "'Barlow Condensed',sans-serif",
+                  fontSize: 30,
+                  fontWeight: 800,
+                  color: C.text,
+                }}
+              >
+                LỊCH TẬP CÁ NHÂN
+              </h2>
+              {profile.conditions?.length > 0 && (
+                <div
+                  style={{
+                    background: C.warnBg,
+                    border: `1px solid ${C.warn}`,
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    maxWidth: 280,
+                  }}
+                >
+                  <p
+                    style={{ fontSize: 12, color: "#92400E", lineHeight: 1.5 }}
+                  >
+                    ⚕️ AI sẽ tạo lịch an toàn dựa trên tình trạng sức khỏe của
+                    bạn
+                  </p>
+                </div>
+              )}
+              <p
+                style={{
+                  color: C.muted,
+                  fontSize: 14,
+                  maxWidth: 280,
+                  lineHeight: 1.6,
+                }}
+              >
+                AI tạo lịch 7 ngày phù hợp với mục tiêu{" "}
+                <span style={{ color: C.accent }}>{profile.goal}</span>
+              </p>
+              <button
+                onClick={generate}
+                style={{
+                  background: C.accent,
+                  color: "#000",
+                  border: "none",
+                  borderRadius: 14,
+                  padding: "14px 32px",
+                  fontSize: 15,
+                  fontWeight: 600,
+                }}
+              >
+                Tạo lịch tập ngay →
+              </button>
+            </div>
+          );
+
+        if (loading)
+          return (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: 1,
+                minHeight: 0,
+                gap: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  border: `3px solid ${C.border}`,
+                  borderTop: `3px solid ${C.accent}`,
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+              <p style={{ color: C.muted, fontSize: 14 }}>
+                AI đang tạo lịch tập cho bạn...
+              </p>
+            </div>
+          );
+
+        // Plan có nhưng parse lỗi hoặc thiếu days → hiện nút thử lại
+        if (plan && !planOk)
+          return (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: 1,
+                minHeight: 0,
+                gap: 14,
+                padding: 24,
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: 52 }}>⚠️</div>
+              <h2
+                style={{
+                  fontFamily: "'Barlow Condensed',sans-serif",
+                  fontSize: 24,
+                  fontWeight: 800,
+                  color: C.text,
+                }}
+              >
+                Tạo lịch chưa thành công
+              </h2>
+              <p
+                style={{
+                  color: C.muted,
+                  fontSize: 13,
+                  maxWidth: 280,
+                  lineHeight: 1.6,
+                }}
+              >
+                AI trả về dữ liệu chưa đúng định dạng. Bấm thử lại — thường chỉ
+                cần 1-2 lần là thành công.
+              </p>
+              <button
+                onClick={() => {
+                  updatePlan(null);
+                  setTimeout(generate, 100);
+                }}
+                style={{
+                  background: C.accent,
+                  color: "#000",
+                  border: "none",
+                  borderRadius: 14,
+                  padding: "13px 28px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                🔄 Thử lại ngay
+              </button>
+              <button
+                onClick={() => updatePlan(null)}
+                style={{
+                  background: "none",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 10,
+                  padding: "9px 20px",
+                  color: C.muted,
+                  fontSize: 13,
+                }}
+              >
+                Quay về
+              </button>
+            </div>
+          );
+
+        return (
+          <div
+            style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: 0 }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: "'Barlow Condensed',sans-serif",
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: C.text,
+                }}
+              >
+                LỊCH TUẦN NÀY
+              </h2>
+              <button
+                onClick={() => updatePlan(null)}
+                style={{
+                  background: "none",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  padding: "5px 12px",
+                  color: C.muted,
+                  fontSize: 12,
+                }}
+              >
+                Tạo lại ↻
+              </button>
+            </div>
+            {planDays.map((day, i) => (
+              <div
+                key={i}
+                style={{
+                  background: day.rest
+                    ? "rgba(255, 255, 255, 0.03)"
+                    : C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderLeft: `4px solid ${day.rest ? C.muted : C.accent}`,
+                  borderRadius: 14,
+                  marginBottom: 10,
+                  overflow: "hidden",
+                  boxShadow: day.rest ? "none" : C.cardShadow,
+                  opacity: day.rest ? 0.8 : 1,
+                }}
+              >
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontSize: 19,
+                        fontWeight: 700,
+                        color: day.rest ? C.muted : C.text,
+                      }}
+                    >
+                      {day.day}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        color: day.rest ? C.muted : C.accent,
+                        fontWeight: 500,
+                        fontStyle: day.rest ? "italic" : "normal",
+                      }}
+                    >
+                      {day.rest ? "Nghỉ ngơi hồi phục" : day.focus}
+                    </span>
+                  </div>
+                  {!day.rest && (
+                    <span style={{ fontSize: 12, color: C.muted }}>
+                      {day.duration}
+                    </span>
+                  )}
+                </div>
+                {!day.rest && day.exercises?.length > 0 && (
+                  <div style={{ borderTop: `1px solid ${C.border}` }}>
+                    {day.exercises.map((ex, j) => (
+                      <div
+                        key={j}
+                        style={{
+                          padding: "9px 16px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          borderBottom:
+                            j < day.exercises.length - 1
+                              ? `1px solid ${C.border}`
+                              : "none",
+                        }}
+                      >
+                        <div style={{ flex: 1, marginRight: 10 }}>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: C.text,
+                              fontWeight: 500,
+                            }}
+                          >
+                            {ex.name}
+                          </div>
+                          {ex.note && (
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: C.muted,
+                                marginTop: 2,
+                              }}
+                            >
+                              {ex.note}
+                            </div>
+                          )}
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: C.accent,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {ex.sets}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // PHẦN 3: HEALTH CHECK-IN
+      // ════════════════════════════════════════════════════════════════
+      function HealthCheckin({ profile }) {
+        const [energy, setEnergy] = useState(null);
+        const [soreness, setSoreness] = useState(null);
+        const [sleep, setSleep] = useState(null);
+        const [symptoms, setSymptoms] = useState([]);
+        const [advice, setAdvice] = useState("");
+        const [loading, setLoading] = useState(false);
+        const [submitted, setSubmitted] = useState(false);
+
+        const SYMPTOM_LIST = [
+          "😵 Chóng mặt",
+          "💗 Tim đập nhanh",
+          "🤢 Buồn nôn",
+          "🦵 Đau cơ nặng",
+          "😮‍💨 Khó thở",
+          "💤 Mất ngủ",
+        ];
+        const getAdvice = async () => {
+          setLoading(true);
+          let hardDecision = null;
+          if (energy <= 1 || soreness >= 5 || sleep <= 1) {
+            hardDecision = "NGHỈ HOÀN TOÀN";
+          } else if (energy <= 2 || soreness >= 4 || sleep <= 2) {
+            hardDecision = "CHỈ TẬP NHẸ";
+          }
+
+          const checkinPrompt = `
+Bạn là chuyên gia thể thao. Áp dụng ĐÚNG các ngưỡng ACSM 2022 dưới đây.
+KHÔNG được đưa ra kết luận ngược với quyết định cứng đã được xác định.
+
+=== DỮ LIỆU HÔM NAY ===
+Năng lượng: ${energy}/5
+Đau cơ (DOMS): ${soreness}/5
+Giấc ngủ: ${sleep}/5
+Triệu chứng: ${symptoms.length ? symptoms.join(", ") : "Không có"}
+Bệnh nền: ${profile.conditions?.join(", ") || "Không có"}
+Mục tiêu: ${profile.goal} | Trình độ: ${profile.level}
+
+=== QUYẾT ĐỊNH CỨNG ĐÃ XÁC ĐỊNH (TUÂN THEO TUYỆT ĐỐI) ===
+${
+  hardDecision === "NGHỈ HOÀN TOÀN"
+    ? "⛔ PHẢI NGHỈ HOÀN TOÀN — không tập bất kỳ bài nào, kể cả cardio nhẹ. Lý do: " +
+      (energy <= 1
+        ? "Năng lượng cực thấp (nguy cơ chấn thương cao — ACSM 2022). "
+        : "") +
+      (soreness >= 5 ? "DOMS nặng (cơ chưa phục hồi — ACSM 2022). " : "") +
+      (sleep <= 1
+        ? "Ngủ dưới 4 tiếng (GH không được tiết đủ — Thomas et al. 2016). "
+        : "")
+    : hardDecision === "CHỈ TẬP NHẸ"
+      ? "🟡 CHỈ ĐƯỢC TẬP NHẸ — giảm 40–50% cường độ, ưu tiên đi bộ 20 phút hoặc stretching."
+      : "✅ ĐỦ ĐIỀU KIỆN TẬP BÌNH THƯỜNG theo lịch hôm nay."
+}
+
+=== NGƯỠNG KHOA HỌC THAM CHIẾU (ACSM 2022 + Thomas et al. 2016) ===
+Năng lượng ≤ 1/5 → Nghỉ bắt buộc
+Năng lượng 2/5 → Giảm 40–50% cường độ
+Năng lượng ≥ 3/5 → Tập bình thường
+DOMS ≥ 5/5 → Nghỉ bắt buộc
+DOMS 4/5 → Đổi sang nhóm cơ khác hoặc cardio nhẹ
+DOMS ≤ 3/5 → Tập bình thường
+Ngủ ≤ 4 tiếng → Nghỉ bắt buộc (GH giảm 60–70%)
+Ngủ 5–6 tiếng → Giảm cường độ 30%
+Ngủ ≥ 7 tiếng → Tập bình thường
+
+=== YÊU CẦU OUTPUT ===
+Trả lời 4 điểm ngắn gọn:
+1. Quyết định hôm nay (dựa trên quyết định cứng ở trên)
+2. Gợi ý cụ thể (bài gì / cường độ bao nhiêu % / bao nhiêu phút)
+3. Lưu ý dinh dưỡng hôm nay (protein, nước)
+4. Có triệu chứng nào cần theo dõi không?
+`;
+          const reply = await askAI(
+            [{ role: "user", content: checkinPrompt }],
+            "Chuyên gia gym & y tế. Tiếng Việt ngắn gọn.",
+          );
+          setAdvice(reply);
+          setLoading(false);
+          setSubmitted(true);
+        };
+
+        const scoreCard = (title, val, setVal, color = "#2563EB") => (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ ...label, marginBottom: 12 }}>{title}</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setVal(n)}
+                  style={{
+                    flex: 1,
+                    padding: "12px 0",
+                    background: val >= n ? color : C.card,
+                    border: `1.5px solid ${val >= n ? color : C.border}`,
+                    borderRadius: 12,
+                    color: val >= n ? "#fff" : C.muted,
+                    fontWeight: 700,
+                    fontSize: 15,
+                    transition: "all 0.2s ease",
+                    cursor: "pointer",
+                    boxShadow: val >= n ? `0 0 15px ${color}30` : "none",
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+        if (submitted)
+          return (
+            <div
+              style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: 0 }}
+            >
+              <h2
+                style={{
+                  fontFamily: "'Barlow Condensed',sans-serif",
+                  fontSize: 24,
+                  fontWeight: 800,
+                  color: C.text,
+                  marginBottom: 16,
+                }}
+              >
+                KẾT QUẢ CHECK-IN
+              </h2>
+              <div
+                style={{
+                  background: C.surface,
+                  border: `1.5px solid ${C.accent}`,
+                  borderRadius: 16,
+                  padding: 16,
+                  marginBottom: 16,
+                  boxShadow: `0 4px 16px ${C.accentGlow}`,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: C.text,
+                    lineHeight: 1.7,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {advice}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  setAdvice("");
+                  setEnergy(null);
+                  setSoreness(null);
+                  setSleep(null);
+                  setSymptoms([]);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "13px",
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 14,
+                  color: C.text,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  boxShadow: C.cardShadow,
+                }}
+              >
+                Check-in lại ↻
+              </button>
+            </div>
+          );
+
+        return (
+          <div
+            style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: 0 }}
+          >
+            <h2
+              style={{
+                fontFamily: "'Barlow Condensed',sans-serif",
+                fontSize: 24,
+                fontWeight: 800,
+                color: C.text,
+                marginBottom: 20,
+              }}
+            >
+              HEALTH CHECK-IN
+            </h2>
+            {scoreCard("⚡ NĂNG LƯỢNG HÔM NAY", energy, setEnergy, C.accent)}
+            {scoreCard(
+              "💪 ĐỘ ĐAU NHỨC CƠ BẮP",
+              soreness,
+              setSoreness,
+              "#00E5CC",
+            )}
+            {scoreCard("😴 CHẤT LƯỢNG GIẤC NGỦ", sleep, setSleep, "#3B82F6")}
+
+            <div style={label}>TRIỆU CHỨNG (nếu có)</div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                marginTop: 8,
+                marginBottom: 20,
+              }}
+            >
+              {SYMPTOM_LIST.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    symptoms.includes(s)
+                      ? setSymptoms(symptoms.filter((x) => x !== s))
+                      : setSymptoms([...symptoms, s]);
+                  }}
+                  style={{
+                    ...chip(symptoms.includes(s), true),
+                    justifyContent: "flex-start",
+                    fontSize: 12,
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => energy && soreness && sleep && getAdvice()}
+              style={primBtn(energy && soreness && sleep)}
+            >
+              {loading ? "Đang phân tích..." : "Nhận lời khuyên →"}
+            </button>
+          </div>
+        );
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // NUTRITION (giữ nguyên)
+      // ════════════════════════════════════════════════════════════════
+      function Nutrition({ profile }) {
+        const [view, setView] = useState("home");
+        const [q, setQ] = useState("");
+        const [ans, setAns] = useState("");
+        const [loading, setLoading] = useState(false);
+        const [tip, setTip] = useState("");
+        const [tipLoad, setTipLoad] = useState(false);
+        const [food, setFood] = useState("");
+        const [cals, setCals] = useState("");
+        const [meals, setMeals] = useState([]);
+
+        useEffect(() => {
+          setTipLoad(true);
+          askAI(
+            [
+              {
+                role: "user",
+                content: `1 mẹo dinh dưỡng quan trọng nhất cho người mục tiêu ${profile.goal}, ${profile.conditions?.length ? "bệnh nền: " + profile.conditions.join(", ") : ""} tập ${profile.days} buổi/tuần. Chỉ 2 câu.`,
+              },
+            ],
+            "Chuyên gia dinh dưỡng thể thao. Tiếng Việt ngắn gọn.",
+          ).then((t) => {
+            setTip(t);
+            setTipLoad(false);
+          });
+        }, []);
+
+        const ask = async () => {
+          if (!q.trim() || loading) return;
+          setLoading(true);
+          const sys = `Chuyên gia dinh dưỡng thể thao. Tiếng Việt ngắn gọn. Người dùng: mục tiêu ${profile.goal}, ${profile.conditions?.length ? "bệnh nền: " + profile.conditions.join(", ") : ""}, ${profile.days} buổi/tuần.`;
+          const reply = await askAI([{ role: "user", content: q }], sys);
+          setAns(reply);
+          setLoading(false);
+        };
+
+        const addMeal = () => {
+          if (!food.trim()) return;
+          setMeals([...meals, { food, cals: parseInt(cals) || 0 }]);
+          setFood("");
+          setCals("");
+        };
+        const total = meals.reduce((s, m) => s + m.cals, 0);
+        const QUICK_Q = [
+          "Nên ăn gì trước khi tập?",
+          "Protein bao nhiêu là đủ?",
+          "Uống gì sau buổi tập?",
+        ];
+
+        if (view === "ask")
+          return (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                minHeight: 0,
+                padding: 16,
+                overflowY: "auto",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setView("home");
+                  setAns("");
+                  setQ("");
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: C.muted,
+                  textAlign: "left",
+                  marginBottom: 16,
+                  fontSize: 14,
+                }}
+              >
+                ← Quay lại
+              </button>
+              <h2
+                style={{
+                  fontFamily: "'Barlow Condensed',sans-serif",
+                  fontSize: 26,
+                  fontWeight: 800,
+                  color: C.text,
+                  marginBottom: 16,
+                }}
+              >
+                HỎI CHUYÊN GIA
+              </h2>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 9,
+                  marginBottom: 14,
+                }}
+              >
+                {QUICK_Q.map((qq) => (
+                  <button
+                    key={qq}
+                    onClick={() => setQ(qq)}
+                    style={{
+                      background: q === qq ? C.accent : C.card,
+                      color: q === qq ? "#000" : C.muted,
+                      border: `1px solid ${q === qq ? C.accent : C.border}`,
+                      borderRadius: 10,
+                      padding: "10px 14px",
+                      fontSize: 13,
+                      textAlign: "left",
+                    }}
+                  >
+                    {qq}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Hoặc nhập câu hỏi..."
+                style={{ ...inputStyle, minHeight: 80, resize: "vertical" }}
+              />
+              <button
+                onClick={ask}
+                style={{
+                  background: loading ? C.border : C.accent,
+                  color: loading ? C.muted : "#000",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "12px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  marginTop: 12,
+                }}
+              >
+                {loading ? "Đang xử lý..." : "Hỏi ngay →"}
+              </button>
+              {ans && (
+                <div
+                  style={{
+                    background: C.card,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 12,
+                    padding: 16,
+                    marginTop: 16,
+                    fontSize: 14,
+                    color: C.text,
+                    lineHeight: 1.7,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {ans}
+                </div>
+              )}
+            </div>
+          );
+
+        if (view === "track")
+          return (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                minHeight: 0,
+                padding: 16,
+                overflowY: "auto",
+              }}
+            >
+              <button
+                onClick={() => setView("home")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: C.muted,
+                  textAlign: "left",
+                  marginBottom: 16,
+                  fontSize: 14,
+                }}
+              >
+                ← Quay lại
+              </button>
+              <div
+                style={{
+                  background: C.card,
+                  border: `1.5px solid ${C.accent}`,
+                  borderRadius: 16,
+                  padding: "20px",
+                  marginBottom: 16,
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'Barlow Condensed',sans-serif",
+                    fontSize: 56,
+                    fontWeight: 900,
+                    color: C.accent,
+                    lineHeight: 1,
+                  }}
+                >
+                  {total}
+                </div>
+                <div style={{ color: C.muted, fontSize: 13, marginTop: 4 }}>
+                  calo hôm nay
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <input
+                  value={food}
+                  onChange={(e) => setFood(e.target.value)}
+                  placeholder="Tên món ăn"
+                  style={{
+                    flex: 2,
+                    background: C.card,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                    color: C.text,
+                    fontSize: 13,
+                  }}
+                />
+                <input
+                  value={cals}
+                  onChange={(e) => setCals(e.target.value)}
+                  placeholder="Kcal"
+                  type="number"
+                  style={{
+                    flex: 1,
+                    background: C.card,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                    color: C.text,
+                    fontSize: 13,
+                  }}
+                />
+                <button
+                  onClick={addMeal}
+                  style={{
+                    background: C.accent,
+                    color: "#000",
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "0 14px",
+                    fontWeight: 700,
+                    fontSize: 18,
+                  }}
+                >
+                  +
+                </button>
+              </div>
+              {meals.length === 0 && (
+                <p
+                  style={{
+                    color: C.muted,
+                    fontSize: 13,
+                    textAlign: "center",
+                    padding: "20px 0",
+                  }}
+                >
+                  Chưa có bữa ăn nào.
+                </p>
+              )}
+              {meals.map((m, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    marginBottom: 8,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ fontSize: 14, color: C.text }}>{m.food}</span>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <span
+                      style={{ fontSize: 14, color: C.accent, fontWeight: 600 }}
+                    >
+                      {m.cals} kcal
+                    </span>
+                    <button
+                      onClick={() => setMeals(meals.filter((_, j) => j !== i))}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: C.muted,
+                        fontSize: 16,
+                        padding: 0,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+
+        return (
+          <div
+            style={{ flex: 1, overflowY: "auto", padding: 16, minHeight: 0 }}
+          >
+            <h2
+              style={{
+                fontFamily: "'Barlow Condensed',sans-serif",
+                fontSize: 24,
+                fontWeight: 800,
+                color: C.text,
+                marginBottom: 4,
+              }}
+            >
+              DINH DƯỠNG
+            </h2>
+            <p style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>
+              Tối ưu chế độ ăn của bạn
+            </p>
+            <div
+              style={{
+                background: C.surface,
+                borderLeft: `4px solid ${C.accent}`,
+                borderRadius: "0 14px 14px 0",
+                padding: "14px 16px",
+                marginBottom: 16,
+                boxShadow: C.cardShadow,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  color: C.accent,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  marginBottom: 6,
+                  textTransform: "uppercase",
+                }}
+              >
+                💡 MẸO HÔM NAY
+              </div>
+              <p
+                style={{
+                  fontSize: 14,
+                  color: tipLoad ? C.muted : C.text,
+                  lineHeight: 1.6,
+                }}
+              >
+                {tipLoad ? "Đang tải..." : tip}
+              </p>
+            </div>
+            {[
+              {
+                view: "ask",
+                icon: "🥗",
+                title: "HỎI CHUYÊN GIA",
+                sub: "Tư vấn dinh dưỡng cá nhân hóa với AI",
+              },
+              {
+                view: "track",
+                icon: "📊",
+                title: "THEO DÕI CALO",
+                sub: "Ghi lại bữa ăn và tổng calo trong ngày",
+              },
+            ].map((card) => (
+              <button
+                key={card.view}
+                onClick={() => setView(card.view)}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 16,
+                  padding: "20px",
+                  textAlign: "left",
+                  marginBottom: 12,
+                  boxShadow: C.cardShadow,
+                  cursor: "pointer",
+                  transition: "box-shadow 0.2s",
+                }}
+              >
+                <div style={{ fontSize: 32, marginBottom: 10 }}>
+                  {card.icon}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'Barlow Condensed',sans-serif",
+                    fontSize: 22,
+                    fontWeight: 800,
+                    color: C.text,
+                  }}
+                >
+                  {card.title}
+                </div>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 5 }}>
+                  {card.sub}
+                </div>
+              </button>
+            ))}
+          </div>
+        );
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // GOAL MODAL
+      // ════════════════════════════════════════════════════════════════
+      function GoalModal({ profile, onSave, onClose }) {
+        const [name, setName] = useState(profile.name);
+        const [age, setAge] = useState(profile.age);
+        const [weight, setWeight] = useState(profile.weight);
+        const [height, setHeight] = useState(profile.height);
+        const [goal, setGoal] = useState(profile.goal);
+        const [level, setLevel] = useState(profile.level);
+        const [days, setDays] = useState(profile.days);
+        const [conditions, setConditions] = useState(profile.conditions || []);
+
+        // Logic mới: Quản lý ô nhập bệnh nền
+        const [newCondition, setNewCondition] = useState("");
+
+        // Logic mới: Tính toán chỉ số và tình trạng BMI
+        const getBMIInfo = () => {
+          if (!weight || !height)
+            return { score: "--", status: "---", color: "#6B7280" };
+          const score = (weight / (height / 100) ** 2).toFixed(1);
+          let status = "Bình thường";
+          let color = C.accent;
+
+          if (score < 18.5) {
+            status = "Thiếu cân";
+            color = "#60A5FA";
+          } else if (score >= 25 && score < 30) {
+            status = "Thừa cân";
+            color = "#FACC15";
+          } else if (score >= 30) {
+            status = "Béo phì";
+            color = "#EF4444";
+          }
+
+          return { score, status, color };
+        };
+
+        const bmiInfo = getBMIInfo();
+
+        // Logic mới: Hàm thêm bệnh nền vào danh sách
+        const addCondition = () => {
+          if (newCondition.trim()) {
+            setConditions([...conditions, newCondition.trim()]);
+            setNewCondition(""); // Xóa ô nhập sau khi thêm
+          }
+        };
+
+        return (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(255,255,255,0.8)",
+              backdropFilter: "blur(6px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              padding: "20px",
+            }}
+            onClick={onClose}
+          >
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: "24px",
+                width: "100%",
+                maxWidth: "600px",
+                border: `1.5px solid ${C.accent}`,
+                boxShadow: `0 0 30px ${C.accent}20`,
+                overflow: "hidden",
+                animation: "fadeIn 0.3s ease",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  background: `linear-gradient(90deg, ${C.accent}20, transparent)`,
+                  padding: "20px 24px",
+                  borderBottom: "1px solid #D1D5DB",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <h2
+                  style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontSize: "24px",
+                    fontWeight: "800",
+                    color: "#111827",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  CHỈNH SỬA MỤC TIÊU & THÔNG TIN
+                </h2>
+                <button
+                  onClick={onClose}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#6B7280",
+                    fontSize: "28px",
+                    cursor: "pointer",
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div
+                style={{
+                  padding: "24px",
+                  maxHeight: "75vh",
+                  overflowY: "auto",
+                }}
+              >
+                {/* Row 1: Stats */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                    gap: "12px",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <div>
+                    <div style={label}>👤 Tên</div>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      style={{
+                        ...inputStyle,
+                        background: "#F8FAFC",
+                        border: "1px solid #D1D5DB",
+                        color: "#111827",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={label}>🎂 Tuổi</div>
+                    <input
+                      type="number"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      style={{
+                        ...inputStyle,
+                        background: "#F8FAFC",
+                        border: "1px solid #D1D5DB",
+                        color: "#111827",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={label}>⚖️ Kg</div>
+                    <input
+                      type="number"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      style={{
+                        ...inputStyle,
+                        background: "#F8FAFC",
+                        border: "1px solid #D1D5DB",
+                        color: "#111827",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <div style={label}>📏 Cm</div>
+                    <input
+                      type="number"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      style={{
+                        ...inputStyle,
+                        background: "#F8FAFC",
+                        border: "1px solid #D1D5DB",
+                        color: "#111827",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* BMI Info Box (Đã sửa để hiển thị tình trạng) */}
+                <div
+                  style={{
+                    background: "#F8FAFC",
+                    borderRadius: "12px",
+                    padding: "12px 16px",
+                    marginBottom: "24px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ color: "#6B7280", fontSize: "13px" }}>
+                    Chỉ số BMI & Tình trạng:
+                  </span>
+                  <span
+                    style={{
+                      color: bmiInfo.color,
+                      fontWeight: "800",
+                      fontSize: "18px",
+                    }}
+                  >
+                    {bmiInfo.score}{" "}
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        marginLeft: "8px",
+                        fontWeight: "400",
+                      }}
+                    >
+                      {bmiInfo.status}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Row 2: Goal & Level */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "20px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <div>
+                    <div style={label}>🎯 Mục tiêu</div>
+                    <select
+                      value={goal}
+                      onChange={(e) => setGoal(e.target.value)}
+                      style={{
+                        ...inputStyle,
+                        background: "#F8FAFC",
+                        border: "1px solid #D1D5DB",
+                        color: "#111827",
+                      }}
+                    >
+                      <option value="giảm cân">Giảm cân</option>
+                      <option value="tăng cơ bắp">Tăng cơ bắp</option>
+                      <option value="cải thiện thể lực">
+                        Cải thiện thể lực
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style={label}>📊 Trình độ</div>
+                    <select
+                      value={level}
+                      onChange={(e) => setLevel(e.target.value)}
+                      style={{
+                        ...inputStyle,
+                        background: "#F8FAFC",
+                        border: "1px solid #D1D5DB",
+                        color: "#111827",
+                      }}
+                    >
+                      <option value="mới bắt đầu">Mới bắt đầu</option>
+                      <option value="trung bình">Trung cấp</option>
+                      <option value="nâng cao">Nâng cao</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row 3: Conditions (Đã sửa nút Thêm) */}
+                <div style={{ marginBottom: "12px" }}>
+                  <div style={label}>🏥 Bệnh nền / Chấn thương hiện tại</div>
+                  <div
+                    style={{ display: "flex", gap: "10px", marginTop: "8px" }}
+                  >
+                    <input
+                      value={newCondition}
+                      onChange={(e) => setNewCondition(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addCondition()}
+                      placeholder="Nhập bệnh/chấn thương..."
+                      style={{
+                        ...inputStyle,
+                        flex: 1,
+                        background: "#F8FAFC",
+                        border: "1px solid #D1D5DB",
+                        color: "#111827",
+                      }}
+                    />
+                    <button
+                      onClick={addCondition}
+                      style={{
+                        background: C.accent,
+                        border: "none",
+                        color: "#111827",
+                        borderRadius: "10px",
+                        padding: "0 20px",
+                        fontSize: "20px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Danh sách bệnh nền đã thêm */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  {conditions.map((c, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        background: "#E5E7EB",
+                        color: "#111827",
+                        padding: "4px 12px",
+                        borderRadius: "20px",
+                        fontSize: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      {c}
+                      <button
+                        onClick={() =>
+                          setConditions(
+                            conditions.filter((_, idx) => idx !== i),
+                          )
+                        }
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "#EF4444",
+                          cursor: "pointer",
+                          padding: 0,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div
+                style={{
+                  padding: "20px 24px",
+                  background: "#F8FAFC",
+                  borderTop: "1px solid #D1D5DB",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 2fr",
+                  gap: "16px",
+                }}
+              >
+                <button
+                  onClick={onClose}
+                  style={{
+                    background: "transparent",
+                    color: "#111827",
+                    border: "none",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Hủy
+                </button>
+
+                <button
+                  onClick={() =>
+                    onSave({
+                      ...profile,
+                      name,
+                      age,
+                      weight,
+                      height,
+                      goal,
+                      level,
+                      days,
+                      conditions,
+                    })
+                  }
+                  style={{
+                    background: C.accent,
+                    color: "#111827",
+                    border: "none",
+                    borderRadius: "12px",
+                    padding: "14px",
+                    fontSize: "15px",
+                    fontWeight: "800",
+                    cursor: "pointer",
+                    boxShadow: `0 4px 14px ${C.accent}60`,
+                  }}
+                >
+                  LƯU THAY ĐỔI
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      const BMICard = ({ weight, height }) => {
+        const bmi =
+          weight > 0 && height > 0
+            ? (weight / (height / 100) ** 2).toFixed(1)
+            : 0;
+
+        const getCategory = (val) => {
+          if (val <= 0)
+            return { label: "---", color: "#5A5A8A", dot: "#1E1E3A" };
+          if (val < 18.5)
+            return { label: "Thiếu cân", color: "#60A5FA", dot: "#60A5FA" };
+          if (val < 25)
+            return { label: "Bình thường", color: "#AAFF00", dot: "#AAFF00" };
+          if (val < 30)
+            return { label: "Thừa cân", color: "#FACC15", dot: "#FACC15" };
+          return { label: "Béo phì", color: "#EF4444", dot: "#EF4444" };
+        };
+
+        const cat = getCategory(parseFloat(bmi));
+        const position = Math.min(
+          Math.max(((bmi - 15) / (40 - 15)) * 100, 0),
+          100,
+        );
+
+        return (
+          <div
+            style={{
+              background: "#FFFFFF",
+              padding: "16px",
+              borderRadius: "16px",
+              border: "1px solid #D1D5DB",
+              marginTop: "12px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                marginBottom: "24px",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    color: "#5A5A8A",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                  }}
+                >
+                  BMI của bạn
+                </span>
+                <span
+                  style={{
+                    fontSize: "36px",
+                    fontWeight: "900",
+                    color: "#fff",
+                    lineHeight: "1",
+                  }}
+                >
+                  {bmi > 0 ? bmi : "--"}
+                </span>
+              </div>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                <div
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: cat.dot,
+                    boxShadow: `0 0 10px ${cat.dot}`,
+                  }}
+                ></div>
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    color: cat.color,
+                  }}
+                >
+                  {cat.label}
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                position: "relative",
+                height: "10px",
+                marginBottom: "8px",
+              }}
+            >
+              {/* Kim chỉ màu trắng */}
+              {bmi > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-12px",
+                    left: `${position}%`,
+                    transform: "translateX(-50%)",
+                    transition: "all 0.5s ease-out",
+                    zIndex: 2,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 0,
+                      height: 0,
+                      borderLeft: "5px solid transparent",
+                      borderRight: "5px solid transparent",
+                      borderTop: "7px solid white",
+                    }}
+                  ></div>
+                </div>
+              )}
+              {/* Thanh dải màu */}
+              <div
+                style={{
+                  display: "flex",
+                  height: "100%",
+                  width: "100%",
+                  borderRadius: "10px",
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ flex: 1, background: "#1D4ED8" }}></div>
+                <div style={{ flex: 2.5, background: "#3B82F6" }}></div>
+                <div style={{ flex: 6.5, background: "#AAFF00" }}></div>
+                <div style={{ flex: 5, background: "#FACC15" }}></div>
+                <div style={{ flex: 5, background: "#F97316" }}></div>
+                <div style={{ flex: 5, background: "#DC2626" }}></div>
+              </div>
+            </div>
+
+            {/* Các mốc số dưới thanh bar - Đảm bảo dàn hàng ngang */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
+              {["15", "18.5", "25", "30", "35", "40"].map((num) => (
+                <span
+                  key={num}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    color: "#5A5A8A",
+                  }}
+                >
+                  {num}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      // ── API KEY MODAL ──────────────────────────────────────────────
+      function ApiKeyModal({ onClose }) {
+        const [key, setKey] = useState(
+          () => localStorage.getItem("gemini_api_key") || "",
+        );
+        const [showKey, setShowKey] = useState(false);
+
+        const handleSave = () => {
+          if (key.trim()) {
+            localStorage.setItem("gemini_api_key", key.trim());
+          } else {
+            localStorage.removeItem("gemini_api_key");
+          }
+          onClose();
+        };
+
+        const handleClear = () => {
+          localStorage.removeItem("gemini_api_key");
+          setKey("");
+          alert("Đã xóa API Key thành công!");
+          onClose();
+        };
+
+        return (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(255,255,255,0.8)",
+              backdropFilter: "blur(6px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              padding: "20px",
+            }}
+            onClick={onClose}
+          >
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: "24px",
+                width: "100%",
+                maxWidth: "500px",
+                border: `1.5px solid ${C.accent}`,
+                boxShadow: `0 0 30px ${C.accent}20`,
+                overflow: "hidden",
+                animation: "fadeIn 0.3s ease",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  background: `linear-gradient(90deg, ${C.accent}20, transparent)`,
+                  padding: "20px 24px",
+                  borderBottom: "1px solid #D1D5DB",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <h2
+                  style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontSize: "24px",
+                    fontWeight: "800",
+                    color: "#111827",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  🔑 CẤU HÌNH API KEY
+                </h2>
+                <button
+                  onClick={onClose}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#6B7280",
+                    fontSize: "28px",
+                    cursor: "pointer",
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={{ padding: "24px" }}>
+                <p
+                  style={{
+                    color: "#6B7280",
+                    fontSize: "13px",
+                    lineHeight: "1.6",
+                    marginBottom: "16px",
+                  }}
+                >
+                  Ứng dụng sử dụng mô hình{" "}
+                  <strong>Gemini AI (2.5 Flash)</strong> để phân tích sức khỏe
+                  và tư vấn tập luyện. Bạn có thể lấy API Key miễn phí chỉ trong
+                  1 phút tại Google AI Studio.
+                </p>
+
+                <div
+                  style={{
+                    background: "rgba(59,130,246,0.1)",
+                    border: "1px solid #3B82F6",
+                    borderRadius: "12px",
+                    padding: "12px",
+                    marginBottom: "20px",
+                    display: "flex",
+                    gap: "10px",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ fontSize: "20px" }}>🌐</span>
+                  <a
+                    href="https://aistudio.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "#60A5FA",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Nhấp vào đây để lấy Gemini API Key miễn phí →
+                  </a>
+                </div>
+
+                <div style={label}>GEMINI API KEY</div>
+                <div style={{ position: "relative", marginBottom: "16px" }}>
+                  <input
+                    type={showKey ? "text" : "password"}
+                    value={key}
+                    onChange={(e) => setKey(e.target.value)}
+                    placeholder="Nhập API Key của bạn (AIzaSy...)"
+                    style={{
+                      ...inputStyle,
+                      paddingRight: "45px",
+                    }}
+                  />
+                  <button
+                    onClick={() => setShowKey(!showKey)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      color: C.muted,
+                      fontSize: "16px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {showKey ? "👁️" : "👁️‍🗨️"}
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    background: "rgba(16,185,129,0.1)",
+                    border: "1px solid #10B981",
+                    borderRadius: "12px",
+                    padding: "12px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#065F46",
+                      lineHeight: "1.5",
+                      margin: 0,
+                    }}
+                  >
+                    🔒 <strong>An toàn dữ liệu:</strong> API Key được lưu trực
+                    tiếp trên trình duyệt của bạn (localStorage) và chỉ gửi trực
+                    tiếp đến Google API. Chúng tôi không lưu trữ bất kỳ thông
+                    tin nào trên máy chủ trung gian.
+                  </p>
+                </div>
+
+                {/* Footer Buttons */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: "10px",
+                  }}
+                >
+                  <button
+                    onClick={onClose}
+                    style={{
+                      background: "transparent",
+                      color: "#111827",
+                      border: `1px solid ${C.border}`,
+                      borderRadius: "12px",
+                      padding: "12px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Hủy
+                  </button>
+
+                  <button
+                    onClick={handleClear}
+                    style={{
+                      background: "rgba(239,68,68,0.1)",
+                      color: "#EF4444",
+                      border: "1px solid #EF4444",
+                      borderRadius: "12px",
+                      padding: "12px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Xóa Key
+                  </button>
+
+                  <button
+                    onClick={handleSave}
+                    style={{
+                      background: C.accent,
+                      color: "#111827",
+                      border: "none",
+                      borderRadius: "12px",
+                      padding: "12px",
+                      fontSize: "13px",
+                      fontWeight: "800",
+                      cursor: "pointer",
+                      boxShadow: `0 4px 14px ${C.accent}60`,
+                    }}
+                  >
+                    Lưu Key
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // ROOT APP
+      // ════════════════════════════════════════════════════════════════
+      // --- BƯỚC 1: KHAI BÁO CÁC PHÍM LƯU TRỮ (Dán phía trên hàm App) ---
+
+      // --- BƯỚC 2: HÀM APP HOÀN CHỈNH ĐÃ TÍCH HỢP LOCALSTORAGE ---
+      function App() {
+        // --- TRẠNG THÁI (STATE) VÀ LOCAL STORAGE ---
+        const [profile, setProfile] = useState(() => {
+          const saved = localStorage.getItem(STORAGE_KEYS.PROFILE);
+          return saved ? JSON.parse(saved) : null;
+        });
+
+        const [screen, setScreen] = useState(() => {
+          const saved = localStorage.getItem(STORAGE_KEYS.SCREEN);
+          return saved || (profile ? "app" : "disclaimer");
+        });
+
+        const [chatMsgs, setChatMsgs] = useState(() => {
+          const saved = localStorage.getItem(STORAGE_KEYS.CHAT);
+          return saved ? JSON.parse(saved) : null;
+        });
+
+        const [schedule, setSchedule] = useState(() => {
+          const saved = localStorage.getItem(STORAGE_KEYS.PLAN);
+          return saved ? JSON.parse(saved) : null;
+        });
+
+        const [tab, setTab] = useState("chat");
+        const [showModal, setShowModal] = useState(false);
+        const [showKeyModal, setShowKeyModal] = useState(false);
+
+        // --- TỰ ĐỘNG ĐỒNG BỘ HÓA DỮ LIỆU ---
+        useEffect(() => {
+          if (profile)
+            localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+          localStorage.setItem(STORAGE_KEYS.SCREEN, screen);
+        }, [profile, screen]);
+
+        useEffect(() => {
+          if (chatMsgs)
+            localStorage.setItem(STORAGE_KEYS.CHAT, JSON.stringify(chatMsgs));
+        }, [chatMsgs]);
+
+        useEffect(() => {
+          if (schedule)
+            localStorage.setItem(STORAGE_KEYS.PLAN, JSON.stringify(schedule));
+        }, [schedule]);
+
+        useEffect(() => {
+          const handler = (e) => {
+            setProfile(e.detail);
+            setScreen("app");
+          };
+          window.addEventListener("load-demo-profile", handler);
+          return () => window.removeEventListener("load-demo-profile", handler);
+        }, []);
+
+        const TABS = [
+          { id: "chat", icon: "💬", label: "Chat" },
+          { id: "schedule", icon: "📅", label: "Lịch tập" },
+          { id: "checkin", icon: "❤️", label: "Check-in" },
+          { id: "nutrition", icon: "🥗", label: "Dinh dưỡng" },
+        ];
+
+        if (screen === "disclaimer")
+          return <Disclaimer onAgree={() => setScreen("onboarding")} />;
+        if (screen === "onboarding")
+          return (
+            <Onboarding
+              onDone={(p) => {
+                setProfile(p);
+                setScreen("app");
+              }}
+            />
+          );
+
+        const currentTab = TABS.find((t) => t.id === tab);
+        const bmiValue = profile
+          ? (profile.weight / (profile.height / 100) ** 2).toFixed(1)
+          : "--";
+
+        return (
+          <div
+            className="app-root"
+            style={{
+              background: C.bg,
+              height: "100vh",
+              display: "flex",
+              overflow: "hidden",
+            }}
+          >
+            {/* ── SIDEBAR (Bản cập nhật UI chuyên nghiệp) ── */}
+            <aside
+              className="app-sidebar"
+              style={{
+                width: 280,
+                background: C.surface,
+                borderRight: `1px solid ${C.border}`,
+                display: "flex",
+                flexDirection: "column",
+                padding: "32px 20px",
+              }}
+            >
+              {/* Branding */}
+              <div style={{ marginBottom: 32 }}>
+                <div
+                  style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontSize: 28,
+                    fontWeight: 900,
+                    color: C.text,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  AI GYM <span style={{ color: C.accent }}>COACH</span>
+                </div>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: C.muted,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    marginTop: 4,
+                  }}
+                >
+                  Phân tích bởi Gemini 2.5 Flash
+                </div>
+              </div>
+
+              {/* Profile Card nâng cấp */}
+              <div
+                style={{
+                  background: "linear-gradient(145deg, #ffffff, #f8fafc)",
+                  borderRadius: 16,
+                  padding: "20px",
+                  marginBottom: 28,
+                  border: `1px solid ${C.border}`,
+                  boxShadow: "inset 0 1px 1px rgba(15,23,42,0.06)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 14,
+                      background: C.accentGlow,
+                      border: `1px solid ${C.accent}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 22,
+                    }}
+                  >
+                    💪
+                  </div>
+                  <div style={{ overflow: "hidden" }}>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 800,
+                        color: C.text,
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {profile?.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: C.accent,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {profile?.level}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                    borderTop: `1px solid ${C.border}`,
+                    paddingTop: 12,
+                  }}
+                >
+                  <div style={{ textAlign: "center" }}>
+                    <div
+                      style={{ fontSize: 9, color: C.muted, fontWeight: 600 }}
+                    >
+                      MỤC TIÊU
+                    </div>
+                    <div
+                      style={{ fontSize: 12, fontWeight: 700, color: C.text }}
+                    >
+                      {profile?.goal}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      borderLeft: `1px solid ${C.border}`,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 9, color: C.muted, fontWeight: 600 }}
+                    >
+                      CHỈ SỐ BMI
+                    </div>
+                    <div
+                      style={{ fontSize: 12, fontWeight: 700, color: C.text }}
+                    >
+                      {bmiValue}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation */}
+              <nav style={{ flex: 1 }}>
+                {TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      width: "100%",
+                      padding: "12px 16px",
+                      background: tab === t.id ? C.accentGlow : "none",
+                      border: "none",
+                      borderRadius: 12,
+                      color: tab === t.id ? C.accent : C.muted,
+                      fontSize: 14,
+                      fontWeight: tab === t.id ? 700 : 500,
+                      cursor: "pointer",
+                      marginBottom: 6,
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <span style={{ fontSize: 20 }}>{t.icon}</span>
+                    {t.label}
+                  </button>
+                ))}
+              </nav>
+
+              {/* Edit Info Button */}
+              <button
+                onClick={() => setShowModal(true)}
+                style={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.03)",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  padding: "12px",
+                  color: C.textSub,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                ✏️ Chỉnh sửa hồ sơ
+              </button>
+
+              {/* API Key Config Button */}
+              <button
+                onClick={() => setShowKeyModal(true)}
+                style={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.03)",
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  padding: "12px",
+                  color: C.textSub,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  marginTop: 8,
+                }}
+              >
+                ⚙️ Cấu hình API Key
+              </button>
+            </aside>
+
+            {/* ── NỘI DUNG CHÍNH (CONTENT AREA) ── */}
+            <div
+              className="app-content"
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                background: C.bg,
+              }}
+            >
+              {showModal && (
+                <GoalModal
+                  profile={profile}
+                  onSave={(p) => {
+                    setProfile(p);
+                    setShowModal(false);
+                  }}
+                  onClose={() => setShowModal(false)}
+                />
+              )}
+
+              {showKeyModal && (
+                <ApiKeyModal onClose={() => setShowKeyModal(false)} />
+              )}
+
+              {/* Header cho Mobile */}
+              <div
+                className="mobile-header"
+                style={{
+                  background: C.surface,
+                  borderBottom: `1px solid ${C.border}`,
+                  padding: "16px 20px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontSize: 22,
+                      fontWeight: 900,
+                      color: C.text,
+                    }}
+                  >
+                    AI GYM <span style={{ color: C.accent }}>COACH</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: C.muted }}>
+                    Xin chào, {profile?.name} 👋
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <button
+                    onClick={() => setShowKeyModal(true)}
+                    style={{
+                      background: "rgba(15,23,42,0.06)",
+                      border: `1px solid ${C.border}`,
+                      borderRadius: "50%",
+                      width: 28,
+                      height: 28,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                      cursor: "pointer",
+                    }}
+                  >
+                    🔑
+                  </button>
+                  <button
+                    onClick={() => setShowModal(true)}
+                    style={{
+                      background: C.accentGlow,
+                      border: `1px solid ${C.accent}`,
+                      borderRadius: 20,
+                      padding: "6px 14px",
+                      fontSize: 11,
+                      color: C.accent,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {profile?.goal} ✏️
+                  </button>
+                </div>
+              </div>
+
+              {/* Topbar Desktop */}
+              <div
+                className="app-topbar"
+                style={{
+                  background: C.surface,
+                  borderBottom: `1px solid ${C.border}`,
+                  padding: "0 32px",
+                  height: 70,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <span style={{ fontSize: 24 }}>{currentTab?.icon}</span>
+                  <div>
+                    <div
+                      style={{
+                        fontFamily: "'Barlow Condensed', sans-serif",
+                        fontSize: 22,
+                        fontWeight: 800,
+                        color: C.text,
+                      }}
+                    >
+                      {currentTab?.label.toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: 12, color: C.muted }}>
+                      Lộ trình được tối ưu hóa cho {profile?.name}
+                    </div>
+                  </div>
+                </div>
+                {profile?.conditions?.length > 0 && (
+                  <div
+                    style={{
+                      background: C.warnBg,
+                      border: `1px solid ${C.warn}`,
+                      borderRadius: 10,
+                      padding: "6px 12px",
+                      fontSize: 12,
+                      color: C.warn,
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⚕️ Đang kích hoạt chế độ an toàn bệnh lý
+                  </div>
+                )}
+              </div>
+
+              {/* Dynamic Tab Screens */}
+              <div
+                className="app-shell-inner"
+                style={{ flex: 1, overflow: "hidden" }}
+              >
+                <div
+                  style={{
+                    display: tab === "chat" ? "flex" : "none",
+                    height: "100%",
+                  }}
+                >
+                  {profile && (
+                    <Chat
+                      profile={profile}
+                      initMsgs={chatMsgs}
+                      onMsgsChange={setChatMsgs}
+                    />
+                  )}
+                </div>
+                <div
+                  style={{
+                    display: tab === "schedule" ? "flex" : "none",
+                    height: "100%",
+                  }}
+                >
+                  {profile && (
+                    <Schedule
+                      profile={profile}
+                      savedPlan={schedule}
+                      onPlanChange={setSchedule}
+                    />
+                  )}
+                </div>
+                <div
+                  style={{
+                    display: tab === "checkin" ? "flex" : "none",
+                    height: "100%",
+                  }}
+                >
+                  {profile && <HealthCheckin profile={profile} />}
+                </div>
+                <div
+                  style={{
+                    display: tab === "nutrition" ? "flex" : "none",
+                    height: "100%",
+                  }}
+                >
+                  {profile && <Nutrition profile={profile} />}
+                </div>
+              </div>
+
+              {/* Bottom Nav Mobile */}
+              <div
+                className="mobile-nav"
+                style={{
+                  background: C.surface,
+                  borderTop: `1px solid ${C.border}`,
+                  display: "flex",
+                  paddingBottom: "env(safe-area-inset-bottom)",
+                }}
+              >
+                {TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    style={{
+                      flex: 1,
+                      background: "none",
+                      border: "none",
+                      padding: "12px 0",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    <span
+                      style={{ fontSize: 20, opacity: tab === t.id ? 1 : 0.5 }}
+                    >
+                      {t.icon}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: tab === t.id ? C.accent : C.muted,
+                      }}
+                    >
+                      {t.label}
+                    </span>
+                    {tab === t.id && (
+                      <div
+                        style={{
+                          width: 16,
+                          height: 3,
+                          background: C.accent,
+                          borderRadius: 2,
+                          marginTop: 4,
+                        }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+      // Render demo buttons sau khi React load
+      setTimeout(() => {
+        const panel = document.getElementById("demo-buttons");
+        if (!panel) return;
+        if (typeof DEMO_SCENARIOS === "undefined") return;
+        DEMO_SCENARIOS.forEach((sc, i) => {
+          const btn = document.createElement("button");
+          btn.textContent = sc.label;
+          btn.style.cssText =
+            "display:block;width:100%;margin-bottom:6px;background:#F8FAFC;border:1px solid #D1D5DB;border-radius:8px;padding:7px 10px;color:#111827;font-size:11px;cursor:pointer;text-align:left;font-family:DM Sans,sans-serif";
+          btn.onmouseover = () => (btn.style.borderColor = "#2563EB");
+          btn.onmouseout = () => (btn.style.borderColor = "#D1D5DB");
+          btn.onclick = () => {
+            // Lưu profile vào localStorage để App đọc
+            localStorage.setItem(
+              "__demo_profile__",
+              JSON.stringify(sc.profile),
+            );
+            location.href = location.pathname + "?demo=1&load=1";
+          };
+          panel.appendChild(btn);
+        });
+      }, 800);
+
+      // Tự động load demo profile nếu có
+      const _dp = localStorage.getItem("__demo_profile__");
+      if (_dp && new URLSearchParams(location.search).get("load") === "1") {
+        localStorage.removeItem("__demo_profile__");
+        const _prof = JSON.parse(_dp);
+        // Inject vào React sau khi mount
+        setTimeout(() => {
+          const _evt = new CustomEvent("load-demo-profile", { detail: _prof });
+          window.dispatchEvent(_evt);
+        }, 500);
+      }
+    </script>
+  </body>
+</html>
